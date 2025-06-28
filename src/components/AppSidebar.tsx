@@ -45,7 +45,7 @@ export function AppSidebar({ activeModule, setActiveModule }: AppSidebarProps) {
   const isCollapsed = state === "collapsed";
 
   return (
-    <Sidebar className={`${isCollapsed ? "w-16" : "w-64"} border-r bg-white shadow-lg`}>
+    <Sidebar className="border-r bg-white shadow-lg">
       <div className="flex items-center justify-between p-4 border-b">
         {!isCollapsed && (
           <div className="flex items-center space-x-2">
@@ -74,9 +74,10 @@ export function AppSidebar({ activeModule, setActiveModule }: AppSidebarProps) {
                         ? "bg-blue-100 text-blue-700 border-l-4 border-blue-600"
                         : "text-gray-600 hover:bg-gray-100 hover:text-gray-800"
                     }`}
+                    tooltip={isCollapsed ? item.title : undefined}
                   >
-                    <item.icon className={`${isCollapsed ? "w-5 h-5" : "w-4 h-4 mr-3"}`} />
-                    {!isCollapsed && <span className="font-medium">{item.title}</span>}
+                    <item.icon className="w-4 h-4" />
+                    {!isCollapsed && <span className="ml-3 font-medium">{item.title}</span>}
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}

@@ -64,7 +64,7 @@ const Index = () => {
 
   // Show main app if user is authenticated
   return (
-    <SidebarProvider>
+    <SidebarProvider defaultOpen={true}>
       <div className="min-h-screen flex w-full bg-gray-50">
         <AppSidebar activeModule={activeModule} setActiveModule={setActiveModule} />
         <div className="flex-1 flex flex-col">

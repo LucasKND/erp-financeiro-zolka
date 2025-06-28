@@ -41,12 +41,13 @@ const menuItems = [
 ];
 
 export function AppSidebar({ activeModule, setActiveModule }: AppSidebarProps) {
-  const { collapsed } = useSidebar();
+  const { state } = useSidebar();
+  const isCollapsed = state === "collapsed";
 
   return (
-    <Sidebar className={`${collapsed ? "w-16" : "w-64"} border-r bg-white shadow-lg`}>
+    <Sidebar className={`${isCollapsed ? "w-16" : "w-64"} border-r bg-white shadow-lg`}>
       <div className="flex items-center justify-between p-4 border-b">
-        {!collapsed && (
+        {!isCollapsed && (
           <div className="flex items-center space-x-2">
             <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-blue-700 rounded-lg flex items-center justify-center">
               <span className="text-white font-bold text-sm">ERP</span>
@@ -60,7 +61,7 @@ export function AppSidebar({ activeModule, setActiveModule }: AppSidebarProps) {
       <SidebarContent className="p-2">
         <SidebarGroup>
           <SidebarGroupLabel className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">
-            {!collapsed ? "Módulos Principais" : ""}
+            {!isCollapsed ? "Módulos Principais" : ""}
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu className="space-y-1">
@@ -74,8 +75,8 @@ export function AppSidebar({ activeModule, setActiveModule }: AppSidebarProps) {
                         : "text-gray-600 hover:bg-gray-100 hover:text-gray-800"
                     }`}
                   >
-                    <item.icon className={`${collapsed ? "w-5 h-5" : "w-4 h-4 mr-3"}`} />
-                    {!collapsed && <span className="font-medium">{item.title}</span>}
+                    <item.icon className={`${isCollapsed ? "w-5 h-5" : "w-4 h-4 mr-3"}`} />
+                    {!isCollapsed && <span className="font-medium">{item.title}</span>}
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}

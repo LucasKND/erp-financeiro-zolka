@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -148,7 +147,11 @@ export function Relatorios() {
                 <XAxis dataKey="categoria" angle={-45} textAnchor="end" height={80} />
                 <YAxis />
                 <Tooltip formatter={(value) => formatCurrency(Math.abs(Number(value)))} />
-                <Bar dataKey="valor" fill={(entry) => entry.tipo === "receita" ? "#10b981" : "#ef4444"} />
+                <Bar 
+                  dataKey="valor" 
+                  fill="#10b981"
+                  style={{ fill: (entry: any) => entry.tipo === "receita" ? "#10b981" : "#ef4444" }}
+                />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>

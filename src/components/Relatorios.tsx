@@ -5,13 +5,13 @@ import { FileText, Download, TrendingUp, TrendingDown, BarChart3, PieChart } fro
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RechartsPie, Pie, Cell, LineChart, Line } from "recharts";
 
 const dreData = [
-  { categoria: "Receitas", valor: 75000, tipo: "receita" },
-  { categoria: "Vendas de Produtos", valor: 45000, tipo: "receita" },
-  { categoria: "Serviços", valor: 30000, tipo: "receita" },
-  { categoria: "Despesas Operacionais", valor: -25000, tipo: "despesa" },
-  { categoria: "Marketing", valor: -8000, tipo: "despesa" },
-  { categoria: "Pessoal", valor: -15000, tipo: "despesa" },
-  { categoria: "Infraestrutura", valor: -7000, tipo: "despesa" },
+  { categoria: "Receitas", valor: 75000, tipo: "receita", fill: "#10b981" },
+  { categoria: "Vendas de Produtos", valor: 45000, tipo: "receita", fill: "#10b981" },
+  { categoria: "Serviços", valor: 30000, tipo: "receita", fill: "#10b981" },
+  { categoria: "Despesas Operacionais", valor: -25000, tipo: "despesa", fill: "#ef4444" },
+  { categoria: "Marketing", valor: -8000, tipo: "despesa", fill: "#ef4444" },
+  { categoria: "Pessoal", valor: -15000, tipo: "despesa", fill: "#ef4444" },
+  { categoria: "Infraestrutura", valor: -7000, tipo: "despesa", fill: "#ef4444" },
 ];
 
 const fluxoMensal = [
@@ -147,11 +147,7 @@ export function Relatorios() {
                 <XAxis dataKey="categoria" angle={-45} textAnchor="end" height={80} />
                 <YAxis />
                 <Tooltip formatter={(value) => formatCurrency(Math.abs(Number(value)))} />
-                <Bar 
-                  dataKey="valor" 
-                  fill="#10b981"
-                  style={{ fill: (entry: any) => entry.tipo === "receita" ? "#10b981" : "#ef4444" }}
-                />
+                <Bar dataKey="valor" fill="fill" />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>

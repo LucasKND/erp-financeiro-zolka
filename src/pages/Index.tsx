@@ -12,9 +12,13 @@ import { FluxoCaixa } from "@/components/FluxoCaixa";
 import { CalendarioContas } from "@/components/CalendarioContas";
 import { Relatorios } from "@/components/Relatorios";
 import { Configuracoes } from "@/components/Configuracoes";
+import { Auth } from "@/components/Auth";
+import { useAuth } from "@/hooks/useAuth";
+import { Loader2 } from "lucide-react";
 
 const Index = () => {
   const [activeModule, setActiveModule] = useState("dashboard");
+  const { user, loading } = useAuth();
 
   const renderModule = () => {
     switch (activeModule) {
@@ -41,6 +45,24 @@ const Index = () => {
     }
   };
 
+  // Show loading spinner while checking auth state
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-blue-600" />
+          <p className="text-gray-600">Carregando...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show auth component if user is not authenticated
+  if (!user) {
+    return <Auth onAuthSuccess={() => window.location.reload()} />;
+  }
+
+  // Show main app if user is authenticated
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-gray-50">

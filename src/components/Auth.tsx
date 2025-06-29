@@ -70,7 +70,7 @@ export function Auth() {
               alt="ZOLKA Logo" 
               className="h-12 w-auto" 
             />
-            <CardTitle className="text-2xl font-bold text-yellow-500">ZOLKA ERP</CardTitle>
+            <CardTitle className="text-2xl font-bold text-yellow-500">ERP</CardTitle>
           </div>
           <CardDescription className="text-gray-300">
             Gestão financeira empresarial completa

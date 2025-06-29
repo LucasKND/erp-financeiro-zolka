@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Bell, User, LogOut, Settings } from "lucide-react";
@@ -5,18 +6,15 @@ import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { NotificationDropdown } from "./NotificationDropdown";
+
 export function TopBar({
   setActiveModule
 }: {
   setActiveModule?: (module: string) => void;
 }) {
-  const {
-    user,
-    signOut
-  } = useAuth();
-  const {
-    toast
-  } = useToast();
+  const { user, signOut } = useAuth();
+  const { toast } = useToast();
+  
   const handleSignOut = async () => {
     try {
       await signOut();
@@ -32,10 +30,27 @@ export function TopBar({
       });
     }
   };
-  return <header className="h-16 border-b border-gray-200 bg-white px-6 flex items-center justify-between">
+
+  // Extract user name from metadata or email
+  const getUserName = () => {
+    if (user?.user_metadata?.full_name) {
+      return user.user_metadata.full_name;
+    }
+    if (user?.user_metadata?.first_name && user?.user_metadata?.last_name) {
+      return `${user.user_metadata.first_name} ${user.user_metadata.last_name}`;
+    }
+    if (user?.user_metadata?.name) {
+      return user.user_metadata.name;
+    }
+    // Fallback to email if no name is available
+    return user?.email?.split('@')[0] || 'Usuário';
+  };
+
+  return (
+    <header className="h-16 border-b border-gray-200 bg-white px-6 flex items-center justify-between">
       <div className="flex items-center space-x-4">
         <div>
-          <h2 className="text-lg font-semibold text-gray-800">Olá, Lucas!</h2>
+          <h2 className="text-lg font-semibold text-gray-800">Olá, {getUserName()}!</h2>
           <p className="text-sm text-gray-500">Gestão Financeira Empresarial</p>
         </div>
       </div>
@@ -49,14 +64,14 @@ export function TopBar({
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="sm" className="flex items-center space-x-2">
               <User className="w-5 h-5" />
-              <span className="hidden md:inline">{user?.email}</span>
+              <span className="hidden md:inline">{getUserName()}</span>
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56">
             <DropdownMenuLabel>
               <div className="flex flex-col space-y-1">
-                <p className="text-sm font-medium">{user?.email}</p>
-                <p className="text-xs text-gray-500">Usuário do Sistema</p>
+                <p className="text-sm font-medium">{getUserName()}</p>
+                <p className="text-xs text-gray-500">{user?.email}</p>
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
@@ -76,5 +91,6 @@ export function TopBar({
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
-    </header>;
+    </header>
+  );
 }

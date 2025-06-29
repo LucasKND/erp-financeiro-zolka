@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { NotificationDropdown } from "./NotificationDropdown";
 import { ThemeToggle } from "./ThemeToggle";
 import { useAuth } from "@/hooks/useAuth";
+import { useProfile } from "@/hooks/useProfile";
 
 interface TopBarProps {
   setActiveModule: (module: string) => void;
@@ -13,13 +14,26 @@ interface TopBarProps {
 
 export function TopBar({ setActiveModule }: TopBarProps) {
   const { user, signOut } = useAuth();
+  const { profile } = useProfile();
+
+  // Extract first name from full_name or fallback to email prefix
+  const getFirstName = () => {
+    if (profile?.full_name) {
+      return profile.full_name.split(' ')[0];
+    }
+    return user?.email?.split('@')[0] || "Usuário";
+  };
+
+  const getDisplayName = () => {
+    return profile?.full_name || user?.email || "Usuário";
+  };
 
   return (
     <header className="flex items-center justify-between px-6 py-4 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 shadow-sm">
       {/* Greeting Section */}
       <div className="flex items-center">
         <h1 className="text-xl font-semibold text-gray-800 dark:text-gray-200">
-          Olá, {user?.email?.split('@')[0] || "Usuário"}
+          Olá, {getFirstName()}
         </h1>
       </div>
 
@@ -35,7 +49,7 @@ export function TopBar({ setActiveModule }: TopBarProps) {
         <div className="flex items-center space-x-3">
           <div className="text-right">
             <div className="text-sm font-medium text-gray-700 dark:text-gray-200">
-              {user?.email || "Usuário"}
+              {getDisplayName()}
             </div>
             <div className="text-xs text-gray-500 dark:text-gray-400">
               Administrador

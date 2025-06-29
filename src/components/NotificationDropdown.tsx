@@ -6,7 +6,6 @@ import { Bell, Clock, TrendingUp, TrendingDown } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuHeader,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,

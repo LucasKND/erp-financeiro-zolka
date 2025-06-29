@@ -205,6 +205,45 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_accounts_payable_totals: {
+        Args: { company_uuid: string }
+        Returns: {
+          total_open: number
+          total_overdue: number
+          total_paid: number
+          count_open: number
+          count_overdue: number
+          count_paid: number
+        }[]
+      }
+      get_accounts_receivable_totals: {
+        Args: { company_uuid: string }
+        Returns: {
+          total_open: number
+          total_overdue: number
+          total_received: number
+          count_open: number
+          count_overdue: number
+          count_received: number
+        }[]
+      }
+      get_cash_flow_data: {
+        Args: { company_uuid: string; months_back?: number }
+        Returns: {
+          month_name: string
+          entradas: number
+          saidas: number
+          saldo: number
+        }[]
+      }
+      get_company_balance: {
+        Args: { company_uuid: string }
+        Returns: {
+          total_balance: number
+          total_receivable: number
+          total_payable: number
+        }[]
+      }
       get_user_company_id: {
         Args: Record<PropertyKey, never>
         Returns: string

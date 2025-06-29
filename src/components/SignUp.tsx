@@ -31,7 +31,7 @@ export function SignUp({ onBackToLogin }: SignUpProps) {
     setIsLoading(true);
     setError(null);
 
-    // Validações básicas
+    // Client-side validation
     if (signUpData.password !== signUpData.confirmPassword) {
       setError('As senhas não coincidem.');
       setIsLoading(false);
@@ -51,89 +51,60 @@ export function SignUp({ onBackToLogin }: SignUpProps) {
     }
 
     try {
-      // Limpar e normalizar os dados de entrada
+      // Clean and normalize input data
       const cleanCompanyName = signUpData.companyName.trim();
       const cleanAccessCode = signUpData.accessCode.trim();
 
-      console.log('=== DEBUG CADASTRO ===');
-      console.log('Nome da empresa digitado:', `"${cleanCompanyName}"`);
-      console.log('Código de acesso digitado:', `"${cleanAccessCode}"`);
-      console.log('Tamanho do nome da empresa:', cleanCompanyName.length);
-      console.log('Tamanho do código de acesso:', cleanAccessCode.length);
-
-      // 1. Primeiro, listar todas as empresas disponíveis para debug
-      console.log('Listando todas as empresas disponíveis...');
-      const { data: allCompanies, error: listError } = await supabase
-        .from('companies')
-        .select('id, name, access_code');
-
-      if (listError) {
-        console.error('Erro ao listar empresas:', listError);
-      } else {
-        console.log('Empresas encontradas:', allCompanies);
-        allCompanies?.forEach((company, index) => {
-          console.log(`Empresa ${index + 1}:`);
-          console.log(`  Nome: "${company.name}" (tamanho: ${company.name?.length})`);
-          console.log(`  Código: "${company.access_code}" (tamanho: ${company.access_code?.length})`);
-        });
-      }
-
-      // 2. Verificar se a empresa existe e o código de acesso está correto
-      console.log('Buscando empresa com critérios específicos...');
-      
-      // Primeira tentativa: busca case-sensitive exata
-      const { data: exactMatch, error: exactError } = await supabase
+      // Verify company exists and access code is correct
+      const { data: company, error: companyError } = await supabase
         .from('companies')
         .select('id, name, access_code')
         .eq('name', cleanCompanyName)
         .eq('access_code', cleanAccessCode)
         .maybeSingle();
 
-      console.log('Resultado busca exata:', exactMatch);
-      if (exactError) console.log('Erro busca exata:', exactError);
-
-      // Segunda tentativa: busca case-insensitive
-      const { data: caseInsensitiveMatch, error: caseInsensitiveError } = await supabase
-        .from('companies')
-        .select('id, name, access_code')
-        .ilike('name', cleanCompanyName)
-        .ilike('access_code', cleanAccessCode)
-        .maybeSingle();
-
-      console.log('Resultado busca case-insensitive:', caseInsensitiveMatch);
-      if (caseInsensitiveError) console.log('Erro busca case-insensitive:', caseInsensitiveError);
-
-      // Usar o resultado que funcionou
-      let company = exactMatch || caseInsensitiveMatch;
-
-      if (!company) {
-        console.log('=== EMPRESA NÃO ENCONTRADA ===');
-        console.log('Tentando busca apenas por nome...');
-        
-        const { data: nameOnlyMatch, error: nameOnlyError } = await supabase
-          .from('companies')
-          .select('id, name, access_code')
-          .ilike('name', cleanCompanyName)
-          .maybeSingle();
-
-        console.log('Empresa encontrada apenas por nome:', nameOnlyMatch);
-        if (nameOnlyError) console.log('Erro busca por nome:', nameOnlyError);
-
-        if (nameOnlyMatch) {
-          console.log('PROBLEMA: Empresa existe mas código de acesso está incorreto');
-          console.log(`Código esperado: "${nameOnlyMatch.access_code}"`);
-          console.log(`Código fornecido: "${cleanAccessCode}"`);
-          setError('Código de acesso incorreto. Verifique se digitou "ZOLKA2024" exatamente como mostrado.');
-        } else {
-          console.log('PROBLEMA: Empresa não existe no banco de dados');
-          setError('Empresa não encontrada. Verifique se digitou "2GO Marketing" exatamente como mostrado.');
-        }
+      if (companyError) {
+        console.error('Database error during company lookup');
+        setError('Erro interno. Tente novamente mais tarde.');
         return;
       }
 
-      console.log('Empresa encontrada:', company.name, 'ID:', company.id);
+      if (!company) {
+        // Try case-insensitive search as fallback
+        const { data: fallbackCompany, error: fallbackError } = await supabase
+          .from('companies')
+          .select('id, name, access_code')
+          .ilike('name', cleanCompanyName)
+          .ilike('access_code', cleanAccessCode)
+          .maybeSingle();
 
-      // 3. Criar usuário no Supabase Auth
+        if (fallbackError) {
+          console.error('Database error during fallback company lookup');
+          setError('Erro interno. Tente novamente mais tarde.');
+          return;
+        }
+
+        if (!fallbackCompany) {
+          // Check if company exists with wrong access code
+          const { data: nameOnlyMatch } = await supabase
+            .from('companies')
+            .select('id')
+            .ilike('name', cleanCompanyName)
+            .maybeSingle();
+
+          if (nameOnlyMatch) {
+            setError('Código de acesso incorreto. Verifique se digitou "ZOLKA2024" exatamente como mostrado.');
+          } else {
+            setError('Empresa não encontrada. Verifique se digitou "2GO Marketing" exatamente como mostrado.');
+          }
+          return;
+        }
+        
+        // Use fallback company if found
+        company = fallbackCompany;
+      }
+
+      // Create user in Supabase Auth
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: signUpData.email,
         password: signUpData.password,
@@ -147,7 +118,7 @@ export function SignUp({ onBackToLogin }: SignUpProps) {
       });
 
       if (authError) {
-        console.error('Erro na criação do usuário:', authError);
+        console.error('Authentication error during signup');
         if (authError.message.includes('User already registered')) {
           setError('Este email já está cadastrado. Tente fazer login.');
         } else if (authError.message.includes('Email domain not allowed')) {
@@ -163,9 +134,7 @@ export function SignUp({ onBackToLogin }: SignUpProps) {
         return;
       }
 
-      console.log('Usuário criado:', authData.user.id);
-
-      // 4. Criar perfil do usuário
+      // Create user profile
       const { error: profileError } = await supabase
         .from('profiles')
         .insert([{
@@ -176,8 +145,8 @@ export function SignUp({ onBackToLogin }: SignUpProps) {
         }]);
 
       if (profileError) {
-        console.error('Erro ao criar perfil:', profileError);
-        // Se o perfil já existe (caso o trigger tenha criado), atualizar
+        console.error('Error creating user profile');
+        // Try to update existing profile if insert failed
         const { error: updateError } = await supabase
           .from('profiles')
           .update({
@@ -187,13 +156,13 @@ export function SignUp({ onBackToLogin }: SignUpProps) {
           .eq('id', authData.user.id);
 
         if (updateError) {
-          console.error('Erro ao atualizar perfil:', updateError);
+          console.error('Error updating user profile');
           setError('Erro ao configurar perfil do usuário.');
           return;
         }
       }
 
-      // 5. Atribuir role financeiro
+      // Assign financeiro role
       const { error: roleError } = await supabase
         .from('user_roles')
         .insert([{
@@ -202,24 +171,22 @@ export function SignUp({ onBackToLogin }: SignUpProps) {
           role: 'financeiro'
         }]);
 
-      if (roleError && roleError.code !== '23505') { // Ignora erro de duplicata
-        console.error('Erro ao criar role:', roleError);
+      if (roleError && roleError.code !== '23505') { // Ignore duplicate error
+        console.error('Error creating user role');
         setError('Erro ao configurar permissões do usuário.');
         return;
       }
-
-      console.log('Cadastro concluído com sucesso');
 
       toast({
         title: "Conta criada com sucesso!",
         description: `Sua conta foi criada para a empresa ${company.name}. Você pode fazer login agora.`,
       });
 
-      // Voltar para tela de login
+      // Return to login screen
       onBackToLogin();
 
     } catch (err) {
-      console.error('Erro inesperado no cadastro:', err);
+      console.error('Unexpected error during signup');
       setError('Erro inesperado. Tente novamente.');
     } finally {
       setIsLoading(false);

@@ -47,19 +47,18 @@ export function TopBar({ setActiveModule }: TopBarProps) {
 
   return (
     <header className="flex items-center justify-between px-6 py-4 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 shadow-sm">
-      {/* Left Section - ERP Name and Company */}
+      {/* Left Section - Company Name */}
       <div className="flex items-center space-x-6">
         <div className="flex items-center space-x-3">
           <div className="w-8 h-8 bg-gradient-to-r from-yellow-500 to-yellow-600 rounded-lg flex items-center justify-center">
-            <span className="text-white font-bold text-sm">Z</span>
+            <span className="text-white font-bold text-sm">
+              {company?.name ? company.name.charAt(0).toUpperCase() : 'Z'}
+            </span>
           </div>
           <div>
             <h1 className="text-lg font-bold text-gray-800 dark:text-gray-200">
-              Zolka ERP
-            </h1>
-            <p className="text-xs text-gray-500 dark:text-gray-400">
               {company?.name || '2GO Marketing'}
-            </p>
+            </h1>
           </div>
         </div>
         

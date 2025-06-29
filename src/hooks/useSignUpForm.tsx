@@ -76,6 +76,7 @@ export function useSignUpForm() {
       }
 
       console.log('Creating user with company:', selectedCompany.name);
+      console.log('Access code verified:', signUpData.accessCode);
 
       // Create user in Supabase Auth
       const { data: authData, error: authError } = await supabase.auth.signUp({
@@ -109,7 +110,11 @@ export function useSignUpForm() {
 
       console.log('User created successfully, user ID:', authData.user.id);
 
+      // Wait a moment for auth to be fully processed
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
       // Create user profile
+      console.log('Creating profile for user:', authData.user.id);
       const { error: profileError } = await supabase
         .from('profiles')
         .insert([{
@@ -140,7 +145,10 @@ export function useSignUpForm() {
         console.log('Profile created successfully');
       }
 
-      // Assign financeiro role with better error handling
+      // Wait another moment for profile to be created
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      // Assign financeiro role
       console.log('Creating user role for user:', authData.user.id);
       const { error: roleError } = await supabase
         .from('user_roles')
@@ -153,7 +161,8 @@ export function useSignUpForm() {
       if (roleError) {
         console.error('Erro ao criar role:', roleError);
         if (roleError.code !== '23505') { // Ignore duplicate error
-          setError('Erro ao configurar permissões do usuário. Por favor, entre em contato com o suporte.');
+          console.error('Role creation failed with error:', roleError);
+          setError(`Erro ao configurar permissões: ${roleError.message}`);
           return;
         }
         console.log('Role already exists, continuing...');

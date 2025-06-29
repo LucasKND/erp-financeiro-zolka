@@ -4,19 +4,20 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, Filter, Eye, Check, Clock } from "lucide-react";
+import { Search, Eye, Check, Edit } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { NovaContaPagarDialog } from "./NovaContaPagarDialog";
+import { FiltrosDialog } from "./FiltrosDialog";
+import { useToast } from "@/hooks/use-toast";
 
-const contasPagar = [
+const contasPagarInicial = [
   {
     id: 1,
     fornecedor: "Fornecedor ABC",
     descricao: "Material de Escritório",
     categoria: "Operacional",
     valorPrevisto: 850.00,
-    valorRealizado: null,
     dataVencimento: "2024-01-20",
-    dataPagamento: null,
     status: "aberto"
   },
   {
@@ -25,9 +26,7 @@ const contasPagar = [
     descricao: "Conta de Luz - Janeiro",
     categoria: "Infraestrutura",
     valorPrevisto: 1200.00,
-    valorRealizado: 1200.00,
     dataVencimento: "2024-01-15",
-    dataPagamento: "2024-01-14",
     status: "pago"
   },
   {
@@ -36,15 +35,38 @@ const contasPagar = [
     descricao: "Anúncios Google Ads",
     categoria: "Marketing",
     valorPrevisto: 2500.00,
-    valorRealizado: null,
     dataVencimento: "2024-01-08",
-    dataPagamento: null,
     status: "vencido"
   },
 ];
 
 export function ContasPagar() {
   const [searchTerm, setSearchTerm] = useState("");
+  const [contas, setContas] = useState(contasPagarInicial);
+  const [filtros, setFiltros] = useState({});
+  const { toast } = useToast();
+
+  const handleNovaContaAdicionada = (novaConta: any) => {
+    setContas([...contas, novaConta]);
+  };
+
+  const handleMarcarComoPago = (contaId: number) => {
+    setContas(contas.map(conta => 
+      conta.id === contaId 
+        ? { ...conta, status: "pago" }
+        : conta
+    ));
+    
+    toast({
+      title: "Conta paga!",
+      description: "A conta foi marcada como paga e adicionada ao fluxo de caixa.",
+    });
+  };
+
+  const handleFiltrosAplicados = (novosFiltros: any) => {
+    setFiltros(novosFiltros);
+    // Aqui você implementaria a lógica de filtro real
+  };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -59,18 +81,19 @@ export function ContasPagar() {
     }
   };
 
-  const formatCurrency = (value: number | null) => {
-    if (value === null) return "-";
+  const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
       currency: 'BRL'
     }).format(value);
   };
 
-  const formatDate = (dateString: string | null) => {
-    if (!dateString) return "-";
+  const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('pt-BR');
   };
+
+  // Filtrar contas que não foram pagas para a lista
+  const contasVisiveisNaLista = contas.filter(conta => conta.status !== "pago");
 
   return (
     <div className="space-y-6">
@@ -79,10 +102,7 @@ export function ContasPagar() {
           <h1 className="text-3xl font-bold text-gray-800">Contas a Pagar</h1>
           <p className="text-gray-600 mt-1">Gerencie suas contas a pagar e pagamentos</p>
         </div>
-        <Button className="bg-blue-600 hover:bg-blue-700">
-          <Plus className="w-4 h-4 mr-2" />
-          Nova Conta
-        </Button>
+        <NovaContaPagarDialog onContaAdicionada={handleNovaContaAdicionada} />
       </div>
 
       {/* Cards de Resumo */}
@@ -133,10 +153,7 @@ export function ContasPagar() {
                   className="pl-10 w-64"
                 />
               </div>
-              <Button variant="outline" size="sm">
-                <Filter className="w-4 h-4 mr-2" />
-                Filtros
-              </Button>
+              <FiltrosDialog onFiltrosAplicados={handleFiltrosAplicados} tipo="pagar" />
             </div>
           </div>
         </CardHeader>
@@ -148,14 +165,13 @@ export function ContasPagar() {
                 <TableHead>Descrição</TableHead>
                 <TableHead>Categoria</TableHead>
                 <TableHead>Valor Previsto</TableHead>
-                <TableHead>Valor Realizado</TableHead>
                 <TableHead>Vencimento</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="w-[100px]">Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {contasPagar.map((conta) => (
+              {contasVisiveisNaLista.map((conta) => (
                 <TableRow key={conta.id} className="hover:bg-gray-50">
                   <TableCell className="font-medium">{conta.fornecedor}</TableCell>
                   <TableCell>{conta.descricao}</TableCell>
@@ -163,7 +179,6 @@ export function ContasPagar() {
                     <Badge variant="secondary">{conta.categoria}</Badge>
                   </TableCell>
                   <TableCell>{formatCurrency(conta.valorPrevisto)}</TableCell>
-                  <TableCell>{formatCurrency(conta.valorRealizado)}</TableCell>
                   <TableCell>{formatDate(conta.dataVencimento)}</TableCell>
                   <TableCell>{getStatusBadge(conta.status)}</TableCell>
                   <TableCell>
@@ -171,8 +186,16 @@ export function ContasPagar() {
                       <Button variant="ghost" size="sm">
                         <Eye className="w-4 h-4" />
                       </Button>
+                      <Button variant="ghost" size="sm">
+                        <Edit className="w-4 h-4" />
+                      </Button>
                       {conta.status === "aberto" && (
-                        <Button variant="ghost" size="sm" className="text-green-600">
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="text-green-600"
+                          onClick={() => handleMarcarComoPago(conta.id)}
+                        >
                           <Check className="w-4 h-4" />
                         </Button>
                       )}

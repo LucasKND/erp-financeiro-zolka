@@ -68,7 +68,7 @@ const Index = () => {
       <div className="min-h-screen flex w-full bg-gray-50">
         <AppSidebar activeModule={activeModule} setActiveModule={setActiveModule} />
         <div className="flex-1 flex flex-col">
-          <TopBar />
+          <TopBar setActiveModule={setActiveModule} />
           <main className="flex-1 p-6 overflow-auto">
             {renderModule()}
           </main>

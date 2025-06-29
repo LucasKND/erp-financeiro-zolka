@@ -4,18 +4,19 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, Filter, Eye, Check, Clock } from "lucide-react";
+import { Search, Eye, Check, Edit } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { NovaContaReceberDialog } from "./NovaContaReceberDialog";
+import { FiltrosDialog } from "./FiltrosDialog";
+import { useToast } from "@/hooks/use-toast";
 
-const contasReceber = [
+const contasReceberInicial = [
   {
     id: 1,
     cliente: "João Silva",
     descricao: "Venda de Produto A",
     valorPrevisto: 2500.00,
-    valorRealizado: null,
     dataVencimento: "2024-01-15",
-    dataRealizacao: null,
     status: "aberto"
   },
   {
@@ -23,9 +24,7 @@ const contasReceber = [
     cliente: "Maria Santos",
     descricao: "Serviço de Consultoria",
     valorPrevisto: 1800.00,
-    valorRealizado: 1800.00,
     dataVencimento: "2024-01-10",
-    dataRealizacao: "2024-01-08",
     status: "recebido"
   },
   {
@@ -33,15 +32,38 @@ const contasReceber = [
     cliente: "Empresa XYZ Ltda",
     descricao: "Projeto Desenvolvimento",
     valorPrevisto: 5000.00,
-    valorRealizado: null,
     dataVencimento: "2024-01-05",
-    dataRealizacao: null,
     status: "vencido"
   },
 ];
 
 export function ContasReceber() {
   const [searchTerm, setSearchTerm] = useState("");
+  const [contas, setContas] = useState(contasReceberInicial);
+  const [filtros, setFiltros] = useState({});
+  const { toast } = useToast();
+
+  const handleNovaContaAdicionada = (novaConta: any) => {
+    setContas([...contas, novaConta]);
+  };
+
+  const handleMarcarComoRecebido = (contaId: number) => {
+    setContas(contas.map(conta => 
+      conta.id === contaId 
+        ? { ...conta, status: "recebido" }
+        : conta
+    ));
+    
+    toast({
+      title: "Conta recebida!",
+      description: "A conta foi marcada como recebida e adicionada ao fluxo de caixa.",
+    });
+  };
+
+  const handleFiltrosAplicados = (novosFiltros: any) => {
+    setFiltros(novosFiltros);
+    // Aqui você implementaria a lógica de filtro real
+  };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -56,18 +78,19 @@ export function ContasReceber() {
     }
   };
 
-  const formatCurrency = (value: number | null) => {
-    if (value === null) return "-";
+  const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
       currency: 'BRL'
     }).format(value);
   };
 
-  const formatDate = (dateString: string | null) => {
-    if (!dateString) return "-";
+  const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('pt-BR');
   };
+
+  // Filtrar contas que não foram recebidas para a lista
+  const contasVisiveisNaLista = contas.filter(conta => conta.status !== "recebido");
 
   return (
     <div className="space-y-6">
@@ -76,10 +99,7 @@ export function ContasReceber() {
           <h1 className="text-3xl font-bold text-gray-800">Contas a Receber</h1>
           <p className="text-gray-600 mt-1">Gerencie suas contas a receber e recebimentos</p>
         </div>
-        <Button className="bg-blue-600 hover:bg-blue-700">
-          <Plus className="w-4 h-4 mr-2" />
-          Nova Conta
-        </Button>
+        <NovaContaReceberDialog onContaAdicionada={handleNovaContaAdicionada} />
       </div>
 
       {/* Cards de Resumo */}
@@ -130,10 +150,7 @@ export function ContasReceber() {
                   className="pl-10 w-64"
                 />
               </div>
-              <Button variant="outline" size="sm">
-                <Filter className="w-4 h-4 mr-2" />
-                Filtros
-              </Button>
+              <FiltrosDialog onFiltrosAplicados={handleFiltrosAplicados} tipo="receber" />
             </div>
           </div>
         </CardHeader>
@@ -144,19 +161,17 @@ export function ContasReceber() {
                 <TableHead>Cliente</TableHead>
                 <TableHead>Descrição</TableHead>
                 <TableHead>Valor Previsto</TableHead>
-                <TableHead>Valor Realizado</TableHead>
                 <TableHead>Vencimento</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="w-[100px]">Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {contasReceber.map((conta) => (
+              {contasVisiveisNaLista.map((conta) => (
                 <TableRow key={conta.id} className="hover:bg-gray-50">
                   <TableCell className="font-medium">{conta.cliente}</TableCell>
                   <TableCell>{conta.descricao}</TableCell>
                   <TableCell>{formatCurrency(conta.valorPrevisto)}</TableCell>
-                  <TableCell>{formatCurrency(conta.valorRealizado)}</TableCell>
                   <TableCell>{formatDate(conta.dataVencimento)}</TableCell>
                   <TableCell>{getStatusBadge(conta.status)}</TableCell>
                   <TableCell>
@@ -164,8 +179,16 @@ export function ContasReceber() {
                       <Button variant="ghost" size="sm">
                         <Eye className="w-4 h-4" />
                       </Button>
+                      <Button variant="ghost" size="sm">
+                        <Edit className="w-4 h-4" />
+                      </Button>
                       {conta.status === "aberto" && (
-                        <Button variant="ghost" size="sm" className="text-green-600">
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="text-green-600"
+                          onClick={() => handleMarcarComoRecebido(conta.id)}
+                        >
                           <Check className="w-4 h-4" />
                         </Button>
                       )}

@@ -1,7 +1,6 @@
-
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Bell, User, LogOut } from "lucide-react";
+import { Bell, User, LogOut, Settings } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -12,8 +11,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { NotificationDropdown } from "./NotificationDropdown";
 
-export function TopBar() {
+export function TopBar({ setActiveModule }: { setActiveModule?: (module: string) => void }) {
   const { user, signOut } = useAuth();
   const { toast } = useToast();
 
@@ -44,15 +44,7 @@ export function TopBar() {
       
       <div className="flex items-center space-x-4">
         {/* Notificações */}
-        <Button variant="ghost" size="sm" className="relative">
-          <Bell className="w-5 h-5" />
-          <Badge 
-            variant="destructive" 
-            className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs"
-          >
-            3
-          </Badge>
-        </Button>
+        <NotificationDropdown setActiveModule={setActiveModule || (() => {})} />
 
         {/* Menu do usuário */}
         <DropdownMenu>
@@ -70,9 +62,13 @@ export function TopBar() {
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setActiveModule?.('configuracoes')}>
               <User className="mr-2 h-4 w-4" />
-              Meu Perfil
+              Minha Empresa
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setActiveModule?.('configuracoes')}>
+              <Settings className="mr-2 h-4 w-4" />
+              Configurações
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleSignOut} className="text-red-600">

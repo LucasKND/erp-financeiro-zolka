@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -59,13 +58,11 @@ export function Auth() {
       <Card className="w-full max-w-md bg-black border-gray-700">
         <CardHeader className="text-center">
           <div className="flex justify-center mb-4">
-            <div className="p-3 bg-yellow-500 rounded-lg">
-              <img 
-                src="/lovable-uploads/f145b6bd-8c26-4f1a-a832-5855b8d850d5.png" 
-                alt="Zolka Logo" 
-                className="w-8 h-8 object-contain"
-              />
-            </div>
+            <img 
+              src="/lovable-uploads/f145b6bd-8c26-4f1a-a832-5855b8d850d5.png" 
+              alt="Zolka Logo" 
+              className="w-16 h-16 object-contain"
+            />
           </div>
           <CardTitle className="text-2xl font-bold text-yellow-500">ZOLKA ERP</CardTitle>
           <CardDescription className="text-gray-300">

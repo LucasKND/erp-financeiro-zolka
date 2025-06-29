@@ -28,7 +28,7 @@ export function AppSidebar({ activeModule, setActiveModule }: AppSidebarProps) {
       <div className="flex items-center justify-between p-4 border-b">
         {!isCollapsed && (
           <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-blue-700 rounded-lg flex items-center justify-center">
+            <div className="w-8 h-8 bg-gradient-to-r from-yellow-500 to-yellow-600 rounded-lg flex items-center justify-center">
               <span className="text-white font-bold text-sm">Z</span>
             </div>
             <span className="font-semibold text-gray-800">Zolka ERP</span>
@@ -50,7 +50,7 @@ export function AppSidebar({ activeModule, setActiveModule }: AppSidebarProps) {
                     onClick={() => setActiveModule(item.id)}
                     className={`w-full justify-start px-3 py-2 rounded-lg transition-all duration-200 ${
                       activeModule === item.id
-                        ? "bg-blue-100 text-blue-700 border-l-4 border-blue-600"
+                        ? "bg-yellow-100 text-yellow-700 border-l-4 border-yellow-600"
                         : "text-gray-600 hover:bg-gray-100 hover:text-gray-800"
                     }`}
                     tooltip={isCollapsed ? item.title : undefined}

@@ -66,6 +66,8 @@ export function Auth() {
           title: "Login realizado com sucesso!",
           description: "Bem-vindo ao Sistema ERP."
         });
+            // ADICIONE ESTA LINHA:
+        window.location.href = "/";
       }
     } catch (err) {
       console.error('Erro inesperado no login:', err);

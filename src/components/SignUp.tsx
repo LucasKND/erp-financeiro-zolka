@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -30,8 +31,6 @@ export function SignUp({ onBackToLogin }: SignUpProps) {
     setIsLoading(true);
     setError(null);
 
-    console.log('🔵 Iniciando processo de cadastro...');
-
     // Client-side validation
     if (signUpData.password !== signUpData.confirmPassword) {
       setError('As senhas não coincidem.');
@@ -56,10 +55,8 @@ export function SignUp({ onBackToLogin }: SignUpProps) {
       const cleanCompanyName = signUpData.companyName.trim();
       const cleanAccessCode = signUpData.accessCode.trim();
 
-      console.log('🔵 Procurando empresa:', cleanCompanyName, 'com código:', cleanAccessCode);
-
       // Verify company exists and access code is correct
-      let { data: company, error: companyError } = await supabase
+      const { data: company, error: companyError } = await supabase
         .from('companies')
         .select('id, name, access_code')
         .eq('name', cleanCompanyName)
@@ -67,17 +64,14 @@ export function SignUp({ onBackToLogin }: SignUpProps) {
         .maybeSingle();
 
       if (companyError) {
-        console.error('❌ Erro ao buscar empresa:', companyError);
+        console.error('Erro ao buscar empresa:', companyError);
         setError('Erro interno. Tente novamente mais tarde.');
         return;
       }
 
-      console.log('🔵 Resultado da busca inicial:', company);
-
       if (!company) {
-        console.log('🔵 Tentando busca case-insensitive...');
         // Try case-insensitive search as fallback
-        let { data: fallbackCompany, error: fallbackError } = await supabase
+        const { data: fallbackCompany, error: fallbackError } = await supabase
           .from('companies')
           .select('id, name, access_code')
           .ilike('name', cleanCompanyName)
@@ -85,15 +79,12 @@ export function SignUp({ onBackToLogin }: SignUpProps) {
           .maybeSingle();
 
         if (fallbackError) {
-          console.error('❌ Erro na busca fallback:', fallbackError);
+          console.error('Erro na busca fallback:', fallbackError);
           setError('Erro interno. Tente novamente mais tarde.');
           return;
         }
 
-        console.log('🔵 Resultado da busca fallback:', fallbackCompany);
-
         if (!fallbackCompany) {
-          console.log('🔵 Verificando se empresa existe com código incorreto...');
           // Check if company exists with wrong access code
           const { data: nameOnlyMatch } = await supabase
             .from('companies')
@@ -108,13 +99,13 @@ export function SignUp({ onBackToLogin }: SignUpProps) {
           }
           return;
         }
-        
-        // Use fallback company if found
-        company = fallbackCompany;
       }
 
-      console.log('🔵 Empresa encontrada:', company);
-      console.log('🔵 Criando usuário no Supabase Auth...');
+      const finalCompany = company || null;
+      if (!finalCompany) {
+        setError('Erro ao validar empresa. Tente novamente.');
+        return;
+      }
 
       // Create user in Supabase Auth
       const { data: authData, error: authError } = await supabase.auth.signUp({
@@ -124,13 +115,13 @@ export function SignUp({ onBackToLogin }: SignUpProps) {
           emailRedirectTo: `${window.location.origin}/`,
           data: {
             full_name: signUpData.fullName,
-            company_name: company.name
+            company_name: finalCompany.name
           }
         }
       });
 
       if (authError) {
-        console.error('❌ Erro na criação do usuário:', authError);
+        console.error('Erro na criação do usuário:', authError);
         if (authError.message.includes('User already registered')) {
           setError('Este email já está cadastrado. Tente fazer login.');
         } else if (authError.message.includes('Email domain not allowed')) {
@@ -142,76 +133,63 @@ export function SignUp({ onBackToLogin }: SignUpProps) {
       }
 
       if (!authData.user) {
-        console.error('❌ Usuário não foi criado');
         setError('Erro inesperado ao criar usuário.');
         return;
       }
-
-      console.log('🔵 Usuário criado com sucesso:', authData.user.id);
-      console.log('🔵 Criando perfil do usuário...');
 
       // Create user profile
       const { error: profileError } = await supabase
         .from('profiles')
         .insert([{
           id: authData.user.id,
-          company_id: company.id,
+          company_id: finalCompany.id,
           full_name: signUpData.fullName.trim(),
           email: signUpData.email
         }]);
 
       if (profileError) {
-        console.error('❌ Erro ao criar perfil:', profileError);
+        console.error('Erro ao criar perfil:', profileError);
         // Try to update existing profile if insert failed
         const { error: updateError } = await supabase
           .from('profiles')
           .update({
-            company_id: company.id,
+            company_id: finalCompany.id,
             full_name: signUpData.fullName.trim()
           })
           .eq('id', authData.user.id);
 
         if (updateError) {
-          console.error('❌ Erro ao atualizar perfil:', updateError);
+          console.error('Erro ao atualizar perfil:', updateError);
           setError('Erro ao configurar perfil do usuário.');
           return;
         }
-        console.log('🔵 Perfil atualizado com sucesso');
-      } else {
-        console.log('🔵 Perfil criado com sucesso');
       }
-
-      console.log('🔵 Atribuindo role financeiro...');
 
       // Assign financeiro role
       const { error: roleError } = await supabase
         .from('user_roles')
         .insert([{
           user_id: authData.user.id,
-          company_id: company.id,
+          company_id: finalCompany.id,
           role: 'financeiro'
         }]);
 
       if (roleError && roleError.code !== '23505') { // Ignore duplicate error
-        console.error('❌ Erro ao criar role:', roleError);
+        console.error('Erro ao criar role:', roleError);
         setError('Erro ao configurar permissões do usuário.');
         return;
       }
 
-      console.log('🔵 Role atribuído com sucesso');
-
       toast({
         title: "Conta criada com sucesso!",
-        description: `Sua conta foi criada para a empresa ${company.name}. Você pode fazer login agora.`,
+        description: `Sua conta foi criada para a empresa ${finalCompany.name}. Você pode fazer login agora.`,
       });
-
-      console.log('🟢 Cadastro concluído com sucesso!');
 
       // Return to login screen
       onBackToLogin();
 
     } catch (err) {
-      console.error('❌ Erro inesperado:', err);
+      console.error('Erro inesperado:', err);
       setError('Erro inesperado. Tente novamente.');
     } finally {
       setIsLoading(false);

@@ -35,7 +35,7 @@ export function TopBar({ setActiveModule }: TopBarProps) {
         <ThemeToggle />
 
         {/* Notifications */}
-        <NotificationDropdown />
+        <NotificationDropdown setActiveModule={setActiveModule} />
 
         {/* User Menu */}
         <div className="flex items-center space-x-3">

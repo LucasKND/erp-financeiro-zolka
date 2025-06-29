@@ -24,6 +24,17 @@ export function CompanySetup({ onSetupComplete }: CompanySetupProps) {
 
     setLoading(true);
     try {
+      console.log('Setting up company for user:', user.id);
+      
+      // First, ensure user profile exists
+      const { data: existingProfile } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .maybeSingle();
+
+      console.log('Existing profile:', existingProfile);
+
       // Create company
       const { data: company, error: companyError } = await supabase
         .from('companies')
@@ -32,14 +43,31 @@ export function CompanySetup({ onSetupComplete }: CompanySetupProps) {
         .single();
 
       if (companyError) throw companyError;
+      console.log('Company created:', company);
 
-      // Update user profile with company_id
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .update({ company_id: company.id })
-        .eq('id', user.id);
+      // Create or update user profile with company_id
+      if (existingProfile) {
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .update({ company_id: company.id })
+          .eq('id', user.id);
 
-      if (profileError) throw profileError;
+        if (profileError) throw profileError;
+        console.log('Profile updated with company_id');
+      } else {
+        // Create profile if it doesn't exist
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .insert([{
+            id: user.id,
+            company_id: company.id,
+            full_name: user.user_metadata?.full_name || user.user_metadata?.name || '',
+            email: user.email
+          }]);
+
+        if (profileError) throw profileError;
+        console.log('Profile created with company_id');
+      }
 
       // Create admin role for the user
       const { error: roleError } = await supabase
@@ -51,6 +79,7 @@ export function CompanySetup({ onSetupComplete }: CompanySetupProps) {
         }]);
 
       if (roleError) throw roleError;
+      console.log('Admin role created');
 
       toast({
         title: "Empresa configurada!",

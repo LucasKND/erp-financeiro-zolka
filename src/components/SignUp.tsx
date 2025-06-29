@@ -1,173 +1,32 @@
 
-import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2, ArrowLeft } from "lucide-react";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
-import { useCompanies } from "@/hooks/useCompanies";
+import { useSignUpForm } from "@/hooks/useSignUpForm";
+import { PersonalInfoForm } from "./PersonalInfoForm";
+import { CompanySelection } from "./CompanySelection";
 
 interface SignUpProps {
   onBackToLogin: () => void;
 }
 
 export function SignUp({ onBackToLogin }: SignUpProps) {
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const { toast } = useToast();
-  const { companies, loading: companiesLoading, error: companiesError } = useCompanies();
-  
-  const [signUpData, setSignUpData] = useState({
-    fullName: "",
-    email: "",
-    password: "",
-    confirmPassword: "",
-    selectedCompanyId: "",
-    accessCode: ""
-  });
+  const {
+    signUpData,
+    updateField,
+    handleSignUp,
+    isLoading,
+    error,
+    companies,
+    companiesLoading,
+    companiesError
+  } = useSignUpForm();
 
-  const handleSignUp = async (e: React.FormEvent) => {
+  const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
-    setError(null);
-
-    // Client-side validation
-    if (signUpData.password !== signUpData.confirmPassword) {
-      setError('As senhas não coincidem.');
-      setIsLoading(false);
-      return;
-    }
-
-    if (signUpData.password.length < 6) {
-      setError('A senha deve ter pelo menos 6 caracteres.');
-      setIsLoading(false);
-      return;
-    }
-
-    if (!signUpData.fullName.trim() || !signUpData.selectedCompanyId || !signUpData.accessCode.trim()) {
-      setError('Por favor, preencha todos os campos obrigatórios.');
-      setIsLoading(false);
-      return;
-    }
-
-    try {
-      // Find selected company
-      const selectedCompany = companies.find(company => company.id === signUpData.selectedCompanyId);
-      
-      if (!selectedCompany) {
-        setError('Empresa selecionada não encontrada.');
-        return;
-      }
-
-      // Verify access code
-      if (selectedCompany.access_code !== signUpData.accessCode.trim()) {
-        setError('Código de acesso incorreto para a empresa selecionada.');
-        return;
-      }
-
-      console.log('Creating user with company:', selectedCompany.name);
-
-      // Create user in Supabase Auth
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: signUpData.email,
-        password: signUpData.password,
-        options: {
-          emailRedirectTo: `${window.location.origin}/`,
-          data: {
-            full_name: signUpData.fullName,
-            company_name: selectedCompany.name
-          }
-        }
-      });
-
-      if (authError) {
-        console.error('Erro na criação do usuário:', authError);
-        if (authError.message.includes('User already registered')) {
-          setError('Este email já está cadastrado. Tente fazer login.');
-        } else if (authError.message.includes('Email domain not allowed')) {
-          setError('Este domínio de email não é permitido.');
-        } else {
-          setError('Erro ao criar conta. Verifique os dados e tente novamente.');
-        }
-        return;
-      }
-
-      if (!authData.user) {
-        setError('Erro inesperado ao criar usuário.');
-        return;
-      }
-
-      console.log('User created, creating profile...');
-
-      // Create user profile
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .insert([{
-          id: authData.user.id,
-          company_id: selectedCompany.id,
-          full_name: signUpData.fullName.trim(),
-          email: signUpData.email
-        }]);
-
-      if (profileError) {
-        console.error('Erro ao criar perfil:', profileError);
-        // Try to update existing profile if insert failed
-        const { error: updateError } = await supabase
-          .from('profiles')
-          .update({
-            company_id: selectedCompany.id,
-            full_name: signUpData.fullName.trim()
-          })
-          .eq('id', authData.user.id);
-
-        if (updateError) {
-          console.error('Erro ao atualizar perfil:', updateError);
-          setError('Erro ao configurar perfil do usuário.');
-          return;
-        }
-      }
-
-      console.log('Profile created, creating role...');
-
-      // Assign financeiro role
-      const { error: roleError } = await supabase
-        .from('user_roles')
-        .insert([{
-          user_id: authData.user.id,
-          company_id: selectedCompany.id,
-          role: 'financeiro'
-        }]);
-
-      if (roleError && roleError.code !== '23505') { // Ignore duplicate error
-        console.error('Erro ao criar role:', roleError);
-        setError('Erro ao configurar permissões do usuário.');
-        return;
-      }
-
-      console.log('Signup completed successfully');
-
-      toast({
-        title: "Conta criada com sucesso!",
-        description: `Sua conta foi criada para a empresa ${selectedCompany.name}. Você pode fazer login agora.`,
-      });
-
-      // Return to login screen
-      onBackToLogin();
-
-    } catch (err) {
-      console.error('Erro inesperado:', err);
-      setError('Erro inesperado. Tente novamente.');
-    } finally {
-      setIsLoading(false);
-    }
+    await handleSignUp(onBackToLogin);
   };
-
-  // Get selected company for access code hint
-  const selectedCompany = companies.find(company => company.id === signUpData.selectedCompanyId);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-white p-4">
@@ -203,129 +62,29 @@ export function SignUp({ onBackToLogin }: SignUpProps) {
             </Alert>
           )}
 
-          {companiesError && (
-            <Alert variant="destructive" className="mb-4">
-              <AlertDescription>{companiesError}</AlertDescription>
-            </Alert>
-          )}
+          <form onSubmit={onSubmit} className="space-y-4">
+            <PersonalInfoForm
+              fullName={signUpData.fullName}
+              email={signUpData.email}
+              password={signUpData.password}
+              confirmPassword={signUpData.confirmPassword}
+              onFullNameChange={(value) => updateField('fullName', value)}
+              onEmailChange={(value) => updateField('email', value)}
+              onPasswordChange={(value) => updateField('password', value)}
+              onConfirmPasswordChange={(value) => updateField('confirmPassword', value)}
+              disabled={isLoading}
+            />
 
-          <form onSubmit={handleSignUp} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="fullName" className="text-yellow-500">Nome Completo *</Label>
-              <Input
-                id="fullName"
-                type="text"
-                placeholder="Seu nome completo"
-                value={signUpData.fullName}
-                onChange={(e) => setSignUpData(prev => ({
-                  ...prev,
-                  fullName: e.target.value
-                }))}
-                required
-                disabled={isLoading}
-                className="border-gray-600 text-gray-900 placeholder-gray-400 bg-white"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="email" className="text-yellow-500">Email *</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="seu@email.com"
-                value={signUpData.email}
-                onChange={(e) => setSignUpData(prev => ({
-                  ...prev,
-                  email: e.target.value
-                }))}
-                required
-                disabled={isLoading}
-                className="border-gray-600 text-gray-900 placeholder-gray-400 bg-white"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="company" className="text-yellow-500">Empresa *</Label>
-              <Select
-                value={signUpData.selectedCompanyId}
-                onValueChange={(value) => setSignUpData(prev => ({
-                  ...prev,
-                  selectedCompanyId: value,
-                  accessCode: "" // Reset access code when company changes
-                }))}
-                disabled={isLoading || companiesLoading}
-              >
-                <SelectTrigger className="border-gray-600 text-gray-900 bg-white">
-                  <SelectValue placeholder={companiesLoading ? "Carregando empresas..." : "Selecione sua empresa"} />
-                </SelectTrigger>
-                <SelectContent className="bg-white border-gray-600 z-50">
-                  {companies.map((company) => (
-                    <SelectItem key={company.id} value={company.id} className="text-gray-900 hover:bg-gray-100">
-                      {company.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {companies.length > 0 && (
-                <p className="text-xs text-gray-400">
-                  Selecione a empresa para a qual você foi convidado
-                </p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="accessCode" className="text-yellow-500">Código de Acesso da Empresa *</Label>
-              <Input
-                id="accessCode"
-                type="text"
-                placeholder={selectedCompany ? `Digite o código para ${selectedCompany.name}` : "Selecione uma empresa primeiro"}
-                value={signUpData.accessCode}
-                onChange={(e) => setSignUpData(prev => ({
-                  ...prev,
-                  accessCode: e.target.value
-                }))}
-                required
-                disabled={isLoading || !signUpData.selectedCompanyId}
-                className="border-gray-600 text-gray-900 placeholder-gray-400 bg-white"
-              />
-              <p className="text-xs text-gray-400">
-                Digite o código de acesso fornecido pela empresa selecionada
-              </p>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="password" className="text-yellow-500">Senha *</Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="Mínimo 6 caracteres"
-                value={signUpData.password}
-                onChange={(e) => setSignUpData(prev => ({
-                  ...prev,
-                  password: e.target.value
-                }))}
-                required
-                disabled={isLoading}
-                className="border-gray-600 text-gray-900 placeholder-gray-400 bg-white"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="confirmPassword" className="text-yellow-500">Confirmar Senha *</Label>
-              <Input
-                id="confirmPassword"
-                type="password"
-                placeholder="Confirme sua senha"
-                value={signUpData.confirmPassword}
-                onChange={(e) => setSignUpData(prev => ({
-                  ...prev,
-                  confirmPassword: e.target.value
-                }))}
-                required
-                disabled={isLoading}
-                className="border-gray-600 text-gray-900 placeholder-gray-400 bg-white"
-              />
-            </div>
+            <CompanySelection
+              companies={companies}
+              companiesLoading={companiesLoading}
+              companiesError={companiesError}
+              selectedCompanyId={signUpData.selectedCompanyId}
+              accessCode={signUpData.accessCode}
+              onCompanyChange={(value) => updateField('selectedCompanyId', value)}
+              onAccessCodeChange={(value) => updateField('accessCode', value)}
+              disabled={isLoading}
+            />
 
             <Button 
               type="submit" 

@@ -4,50 +4,35 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, Filter, Eye, Users, Mail, Phone } from "lucide-react";
+import { Plus, Search, Filter, Eye, Users, Mail, Phone, MoreHorizontal, Edit, Trash2, FileText } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { NovoClienteDialog } from "./NovoClienteDialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { toast } from "@/hooks/use-toast";
 
-const clientes = [
-  {
-    id: 1,
-    nome: "João Silva",
-    tipo: "Pessoa Física",
-    documento: "123.456.789-00",
-    email: "joao@email.com",
-    telefone: "(11) 99999-9999",
-    cidade: "São Paulo",
-    contasAbertas: 2,
-    valorTotal: 3500.00,
-    ultimaTransacao: "2024-01-10"
-  },
-  {
-    id: 2,
-    nome: "Maria Santos",
-    tipo: "Pessoa Física",
-    documento: "987.654.321-00",
-    email: "maria@email.com",
-    telefone: "(11) 88888-8888",
-    cidade: "Rio de Janeiro",
-    contasAbertas: 0,
-    valorTotal: 1800.00,
-    ultimaTransacao: "2024-01-08"
-  },
-  {
-    id: 3,
-    nome: "Empresa XYZ Ltda",
-    tipo: "Pessoa Jurídica",
-    documento: "12.345.678/0001-90",
-    email: "contato@xyz.com",
-    telefone: "(11) 3333-3333",
-    cidade: "São Paulo",
-    contasAbertas: 1,
-    valorTotal: 5000.00,
-    ultimaTransacao: "2024-01-05"
-  },
-];
+const clientesIniciais = [];
 
 export function Clientes() {
   const [searchTerm, setSearchTerm] = useState("");
+  const [clientes, setClientes] = useState(clientesIniciais);
+  const [clienteParaEditar, setClienteParaEditar] = useState<any>(null);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -60,6 +45,55 @@ export function Clientes() {
     return new Date(dateString).toLocaleDateString('pt-BR');
   };
 
+  const adicionarCliente = (novoCliente: any) => {
+    const clienteComId = {
+      ...novoCliente,
+      id: clientes.length > 0 ? Math.max(...clientes.map(c => c.id)) + 1 : 1,
+      contasAbertas: 0,
+      valorTotal: 0.00,
+      ultimaTransacao: new Date().toISOString().split('T')[0],
+      documento: novoCliente.tipo === "Pessoa Jurídica" ? novoCliente.cnpj : novoCliente.cpf || ""
+    };
+    
+    setClientes(prev => [...prev, clienteComId]);
+  };
+
+  const editarCliente = (clienteAtualizado: any) => {
+    setClientes(prev => prev.map(cliente => 
+      cliente.id === clienteAtualizado.id 
+        ? { 
+            ...clienteAtualizado, 
+            documento: clienteAtualizado.tipo === "Pessoa Jurídica" ? clienteAtualizado.cnpj : clienteAtualizado.cpf || ""
+          }
+        : cliente
+    ));
+    setClienteParaEditar(null);
+  };
+
+  const deletarCliente = (id: number) => {
+    setClientes(prev => prev.filter(cliente => cliente.id !== id));
+    toast({
+      title: "Cliente deletado",
+      description: "Cliente removido com sucesso!",
+    });
+  };
+
+  const visualizarContasReceber = (cliente: any) => {
+    toast({
+      title: "Contas a Receber",
+      description: `Visualizando contas de ${cliente.nome}`,
+    });
+    // Aqui você implementaria a navegação para a tela de contas a receber
+    // ou abrir um modal com as contas do cliente
+  };
+
+  // Filtrar clientes baseado no termo de busca
+  const clientesFiltrados = clientes.filter(cliente =>
+    cliente.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    cliente.documento.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    cliente.email.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -67,10 +101,12 @@ export function Clientes() {
           <h1 className="text-3xl font-bold text-gray-800">Clientes</h1>
           <p className="text-gray-600 mt-1">Gerencie sua base de clientes</p>
         </div>
-        <Button className="bg-blue-600 hover:bg-blue-700">
-          <Plus className="w-4 h-4 mr-2" />
-          Novo Cliente
-        </Button>
+        <NovoClienteDialog 
+          onClienteAdicionado={adicionarCliente}
+          clienteParaEditar={clienteParaEditar}
+          onClienteEditado={editarCliente}
+          onCancelarEdicao={() => setClienteParaEditar(null)}
+        />
       </div>
 
       {/* Cards de Resumo */}
@@ -162,7 +198,7 @@ export function Clientes() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {clientes.map((cliente) => (
+              {clientesFiltrados.map((cliente) => (
                 <TableRow key={cliente.id} className="hover:bg-gray-50">
                   <TableCell className="font-medium">{cliente.nome}</TableCell>
                   <TableCell>
@@ -191,9 +227,53 @@ export function Clientes() {
                   </TableCell>
                   <TableCell>{formatCurrency(cliente.valorTotal)}</TableCell>
                   <TableCell>
-                    <Button variant="ghost" size="sm">
-                      <Eye className="w-4 h-4" />
-                    </Button>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="sm">
+                          <MoreHorizontal className="w-4 h-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => setClienteParaEditar(cliente)}>
+                          <Edit className="w-4 h-4 mr-2" />
+                          Editar
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => visualizarContasReceber(cliente)}>
+                          <FileText className="w-4 h-4 mr-2" />
+                          Contas a Receber
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <DropdownMenuItem 
+                              onSelect={(e) => e.preventDefault()}
+                              className="text-red-600 focus:text-red-600"
+                            >
+                              <Trash2 className="w-4 h-4 mr-2" />
+                              Deletar
+                            </DropdownMenuItem>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Tem certeza que deseja deletar o cliente <strong>{cliente.nome}</strong>? 
+                                Esta ação não pode ser desfeita.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                              <AlertDialogAction 
+                                onClick={() => deletarCliente(cliente.id)}
+                                className="bg-red-600 hover:bg-red-700"
+                              >
+                                Deletar
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </TableCell>
                 </TableRow>
               ))}

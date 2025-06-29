@@ -80,8 +80,8 @@ export function AppSidebar({
 
       <SidebarFooter className="p-4 border-t border-gray-200 dark:border-gray-700">
         <div className="flex items-center justify-center">
-          {isCollapsed ? <img src="/lovable-uploads/c41c9428-bce8-4d15-bc92-f2bf789c5576.png" alt="Zolka Logo" className="w-12 h-12 object-contain filter brightness-0" /> : <div className="flex items-center space-x-2">
-              <img src="/lovable-uploads/c41c9428-bce8-4d15-bc92-f2bf789c5576.png" alt="Zolka Logo" className="w-12 h-12 object-contain filter brightness-0" />
+          {isCollapsed ? <img src="/lovable-uploads/LogoZolka.png" alt="Zolka Logo" className="w-12 h-12 object-contain" /> : <div className="flex items-center space-x-2">
+              <img src="/lovable-uploads/LogoZolka.png" alt="Zolka Logo" className="w-12 h-12 object-contain" />
               <div className="text-center">
                 
                 <div className="text-xs text-gray-500 dark:text-gray-400">ERP System</div>

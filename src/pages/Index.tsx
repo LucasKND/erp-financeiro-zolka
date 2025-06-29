@@ -29,12 +29,12 @@ const Index = () => {
   // Show loading while fetching profile
   if (profileLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
           <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg flex items-center justify-center mx-auto mb-4 animate-pulse">
             <span className="text-white font-bold text-lg">ERP</span>
           </div>
-          <div className="text-lg text-gray-600">Carregando seu perfil...</div>
+          <div className="text-lg text-muted-foreground">Carregando seu perfil...</div>
         </div>
       </div>
     );
@@ -74,11 +74,11 @@ const Index = () => {
 
   return (
     <SidebarProvider>
-      <div className="flex min-h-screen w-full bg-gray-50">
+      <div className="flex min-h-screen w-full bg-background">
         <AppSidebar activeModule={activeModule} setActiveModule={setActiveModule} />
         <div className="flex-1 flex flex-col min-w-0">
           <TopBar setActiveModule={setActiveModule} />
-          <main className="flex-1 p-6 overflow-auto">
+          <main className="flex-1 p-6 overflow-auto bg-background">
             {renderActiveModule()}
           </main>
         </div>

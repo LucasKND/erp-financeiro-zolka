@@ -1,4 +1,3 @@
-
 import { Bell, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -9,15 +8,23 @@ import { ProfileDropdown } from "./ProfileDropdown";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import { usePermissions } from "@/hooks/usePermissions";
-
 interface TopBarProps {
   setActiveModule: (module: string) => void;
 }
-
-export function TopBar({ setActiveModule }: TopBarProps) {
-  const { user, signOut } = useAuth();
-  const { profile, company } = useProfile();
-  const { userRole } = usePermissions();
+export function TopBar({
+  setActiveModule
+}: TopBarProps) {
+  const {
+    user,
+    signOut
+  } = useAuth();
+  const {
+    profile,
+    company
+  } = useProfile();
+  const {
+    userRole
+  } = usePermissions();
 
   // Extract first name from various sources
   const getFirstName = () => {
@@ -38,23 +45,16 @@ export function TopBar({ setActiveModule }: TopBarProps) {
     }
     return "Usuário";
   };
-
   const getRoleLabel = () => {
     if (userRole?.role === 'financeiro') return 'Financeiro';
     if (userRole?.role === 'proprietario') return 'Proprietário';
     return 'Usuário';
   };
-
-  return (
-    <header className="flex items-center justify-between px-6 py-4 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 shadow-sm">
+  return <header className="flex items-center justify-between px-6 py-4 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 shadow-sm">
       {/* Left Section - Company Name */}
       <div className="flex items-center space-x-6">
         <div className="flex items-center space-x-3">
-          <div className="w-8 h-8 bg-gradient-to-r from-yellow-500 to-yellow-600 rounded-lg flex items-center justify-center">
-            <span className="text-white font-bold text-sm">
-              {company?.name ? company.name.charAt(0).toUpperCase() : 'Z'}
-            </span>
-          </div>
+          
           <div>
             <h1 className="text-lg font-bold text-gray-800 dark:text-gray-200">
               {company?.name || '2GO Marketing'}
@@ -85,6 +85,5 @@ export function TopBar({ setActiveModule }: TopBarProps) {
         {/* Profile Dropdown */}
         <ProfileDropdown setActiveModule={setActiveModule} />
       </div>
-    </header>
-  );
+    </header>;
 }

@@ -78,8 +78,8 @@ export function FluxoCaixa() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-800">Fluxo de Caixa</h1>
-          <p className="text-gray-600 mt-1">Extrato detalhado de todas as transações</p>
+          <h1 className="text-3xl font-bold text-foreground">Fluxo de Caixa</h1>
+          <p className="text-muted-foreground mt-1">Extrato detalhado de todas as transações</p>
         </div>
         <div className="flex space-x-2">
           <Button variant="outline" className="text-green-600 border-green-300">
@@ -97,19 +97,19 @@ export function FluxoCaixa() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <Card className="border-l-4 border-l-blue-500">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600">Saldo Atual</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Saldo Atual</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-blue-600">
               {formatCurrency(transacoes[0]?.saldo || 0)}
             </div>
-            <p className="text-xs text-gray-500">Banco do Brasil</p>
+            <p className="text-xs text-muted-foreground">Banco do Brasil</p>
           </CardContent>
         </Card>
 
         <Card className="border-l-4 border-l-green-500">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600 flex items-center">
+            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center">
               <TrendingUp className="w-4 h-4 mr-1" />
               Total Entradas
             </CardTitle>
@@ -118,13 +118,13 @@ export function FluxoCaixa() {
             <div className="text-2xl font-bold text-green-600">
               {formatCurrency(totalEntradas)}
             </div>
-            <p className="text-xs text-gray-500">No período</p>
+            <p className="text-xs text-muted-foreground">No período</p>
           </CardContent>
         </Card>
 
         <Card className="border-l-4 border-l-red-500">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600 flex items-center">
+            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center">
               <TrendingDown className="w-4 h-4 mr-1" />
               Total Saídas
             </CardTitle>
@@ -133,19 +133,19 @@ export function FluxoCaixa() {
             <div className="text-2xl font-bold text-red-600">
               {formatCurrency(totalSaidas)}
             </div>
-            <p className="text-xs text-gray-500">No período</p>
+            <p className="text-xs text-muted-foreground">No período</p>
           </CardContent>
         </Card>
 
         <Card className={`border-l-4 ${saldoLiquido >= 0 ? 'border-l-green-500' : 'border-l-red-500'}`}>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600">Saldo Líquido</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Saldo Líquido</CardTitle>
           </CardHeader>
           <CardContent>
             <div className={`text-2xl font-bold ${saldoLiquido >= 0 ? 'text-green-600' : 'text-red-600'}`}>
               {formatCurrency(saldoLiquido)}
             </div>
-            <p className="text-xs text-gray-500">Entradas - Saídas</p>
+            <p className="text-xs text-muted-foreground">Entradas - Saídas</p>
           </CardContent>
         </Card>
       </div>
@@ -187,7 +187,7 @@ export function FluxoCaixa() {
             </TableHeader>
             <TableBody>
               {transacoes.map((transacao) => (
-                <TableRow key={transacao.id} className="hover:bg-gray-50">
+                <TableRow key={transacao.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
                   <TableCell>{formatDate(transacao.data)}</TableCell>
                   <TableCell className="font-medium">{transacao.descricao}</TableCell>
                   <TableCell>

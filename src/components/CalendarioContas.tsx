@@ -6,42 +6,11 @@ import { Badge } from "@/components/ui/badge";
 import { ChevronLeft, ChevronRight, Calendar, Eye, Check } from "lucide-react";
 
 const eventosCalendario = [
-  {
-    id: 1,
-    data: "2024-01-15",
-    tipo: "receber",
-    titulo: "João Silva - Venda Produto A",
-    valor: 2500.00,
-    status: "aberto"
-  },
-  {
-    id: 2,
-    data: "2024-01-18",
-    tipo: "pagar",
-    titulo: "Fornecedor ABC - Material",
-    valor: 850.00,
-    status: "aberto"
-  },
-  {
-    id: 3,
-    data: "2024-01-20",
-    tipo: "receber",
-    titulo: "Empresa XYZ - Projeto Dev",
-    valor: 5000.00,
-    status: "vencido"
-  },
-  {
-    id: 4,
-    data: "2024-01-25",
-    tipo: "pagar",
-    titulo: "Marketing Digital - Anúncios",
-    valor: 2500.00,
-    status: "aberto"
-  },
+  // Array vazio - pronto para receber eventos reais
 ];
 
 export function CalendarioContas() {
-  const [mesAtual, setMesAtual] = useState(new Date(2024, 0, 1)); // Janeiro 2024
+  const [mesAtual, setMesAtual] = useState(new Date()); // Data atual
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -103,18 +72,18 @@ export function CalendarioContas() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-800">Calendário de Contas</h1>
-          <p className="text-gray-600 mt-1">Visualize suas contas a pagar e receber por data</p>
+          <h1 className="text-3xl font-bold text-foreground">Calendário de Contas</h1>
+          <p className="text-muted-foreground mt-1">Visualize suas contas a pagar e receber por data</p>
         </div>
         <div className="flex items-center space-x-4">
           <div className="flex items-center space-x-2">
             <div className="flex items-center space-x-1">
               <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-              <span className="text-sm text-gray-600">A Receber</span>
+              <span className="text-sm text-muted-foreground">A Receber</span>
             </div>
             <div className="flex items-center space-x-1">
               <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-              <span className="text-sm text-gray-600">A Pagar</span>
+              <span className="text-sm text-muted-foreground">A Pagar</span>
             </div>
           </div>
         </div>
@@ -124,31 +93,31 @@ export function CalendarioContas() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card className="border-l-4 border-l-blue-500">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600">A Receber Este Mês</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">A Receber Este Mês</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-blue-600">R$ 7.500,00</div>
-            <p className="text-xs text-gray-500">2 contas programadas</p>
+            <p className="text-xs text-muted-foreground">2 contas programadas</p>
           </CardContent>
         </Card>
 
         <Card className="border-l-4 border-l-red-500">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600">A Pagar Este Mês</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">A Pagar Este Mês</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-red-600">R$ 3.350,00</div>
-            <p className="text-xs text-gray-500">2 contas programadas</p>
+            <p className="text-xs text-muted-foreground">2 contas programadas</p>
           </CardContent>
         </Card>
 
         <Card className="border-l-4 border-l-yellow-500">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600">Contas Vencidas</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Contas Vencidas</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-yellow-600">R$ 5.000,00</div>
-            <p className="text-xs text-gray-500">1 conta vencida</p>
+            <p className="text-xs text-muted-foreground">1 conta vencida</p>
           </CardContent>
         </Card>
       </div>
@@ -177,7 +146,7 @@ export function CalendarioContas() {
         <CardContent>
           <div className="grid grid-cols-7 gap-2 mb-4">
             {diasSemana.map((dia) => (
-              <div key={dia} className="p-2 text-center text-sm font-medium text-gray-500">
+              <div key={dia} className="p-2 text-center text-sm font-medium text-muted-foreground">
                 {dia}
               </div>
             ))}
@@ -192,11 +161,11 @@ export function CalendarioContas() {
                 <div
                   key={index}
                   className={`min-h-[100px] p-2 border rounded-lg ${
-                    diaInfo.mesAtual ? 'bg-white' : 'bg-gray-50'
-                  } ${isHoje ? 'border-blue-500 bg-blue-50' : 'border-gray-200'}`}
+                    diaInfo.mesAtual ? 'bg-card' : 'bg-muted/50'
+                  } ${isHoje ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' : 'border-border'}`}
                 >
                   <div className={`text-sm font-medium mb-2 ${
-                    diaInfo.mesAtual ? 'text-gray-800' : 'text-gray-400'
+                    diaInfo.mesAtual ? 'text-foreground' : 'text-muted-foreground'
                   } ${isHoje ? 'text-blue-600' : ''}`}>
                     {diaInfo.data.getDate()}
                   </div>
@@ -208,9 +177,9 @@ export function CalendarioContas() {
                         className={`text-xs p-1 rounded cursor-pointer hover:opacity-80 ${
                           evento.tipo === 'receber'
                             ? evento.status === 'vencido'
-                              ? 'bg-yellow-100 text-yellow-800 border border-yellow-300'
-                              : 'bg-blue-100 text-blue-800 border border-blue-300'
-                            : 'bg-red-100 text-red-800 border border-red-300'
+                              ? 'bg-yellow-100 text-yellow-800 border border-yellow-300 dark:bg-yellow-900/30 dark:text-yellow-400 dark:border-yellow-600'
+                              : 'bg-blue-100 text-blue-800 border border-blue-300 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-600'
+                            : 'bg-red-100 text-red-800 border border-red-300 dark:bg-red-900/30 dark:text-red-400 dark:border-red-600'
                         }`}
                         title={`${evento.titulo} - ${formatCurrency(evento.valor)}`}
                       >

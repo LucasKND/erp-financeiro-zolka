@@ -98,8 +98,8 @@ export function Clientes() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-800">Clientes</h1>
-          <p className="text-gray-600 mt-1">Gerencie sua base de clientes</p>
+          <h1 className="text-3xl font-bold text-foreground">Clientes</h1>
+          <p className="text-muted-foreground mt-1">Gerencie sua base de clientes</p>
         </div>
         <NovoClienteDialog 
           onClienteAdicionado={adicionarCliente}
@@ -199,7 +199,7 @@ export function Clientes() {
             </TableHeader>
             <TableBody>
               {clientesFiltrados.map((cliente) => (
-                <TableRow key={cliente.id} className="hover:bg-gray-50">
+                <TableRow key={cliente.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
                   <TableCell className="font-medium">{cliente.nome}</TableCell>
                   <TableCell>
                     <Badge variant={cliente.tipo === "Pessoa Física" ? "default" : "secondary"}>

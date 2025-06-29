@@ -50,22 +50,22 @@ export function TopBar({
     if (userRole?.role === 'proprietario') return 'Proprietário';
     return 'Usuário';
   };
-  return <header className="flex items-center justify-between px-6 py-4 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 shadow-sm">
+  return <header className="flex items-center justify-between px-6 py-4 bg-background border-b border-border shadow-sm">
       {/* Left Section - Company Name */}
       <div className="flex items-center space-x-6">
         <div className="flex items-center space-x-3">
           
           <div>
-            <h1 className="text-lg font-bold text-gray-800 dark:text-gray-200">
+            <h1 className="text-lg font-bold text-foreground">
               {company?.name || '2GO Marketing'}
             </h1>
           </div>
         </div>
         
-        <div className="hidden md:block h-6 w-px bg-gray-300 dark:bg-gray-600"></div>
+        <div className="hidden md:block h-6 w-px bg-border"></div>
         
         <div className="hidden md:flex items-center space-x-2">
-          <span className="text-sm text-gray-600 dark:text-gray-300">
+          <span className="text-sm text-muted-foreground">
             Olá, {getFirstName()}
           </span>
           <Badge variant="secondary" className="text-xs">

@@ -142,8 +142,8 @@ export function ContasReceber() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-800">Contas a Receber</h1>
-          <p className="text-gray-600 mt-1">
+          <h1 className="text-3xl font-bold text-foreground">Contas a Receber</h1>
+          <p className="text-muted-foreground mt-1">
             Gerencie suas contas a receber - {company?.name}
           </p>
         </div>
@@ -154,11 +154,11 @@ export function ContasReceber() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card className="border-l-4 border-l-blue-500">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600">Total em Aberto</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Total em Aberto</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-blue-600">{formatCurrency(totalAberto)}</div>
-            <p className="text-xs text-gray-500">
+            <p className="text-xs text-muted-foreground">
               {contas.filter(c => c.status === 'open').length} contas pendentes
             </p>
           </CardContent>
@@ -166,11 +166,11 @@ export function ContasReceber() {
 
         <Card className="border-l-4 border-l-red-500">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600">Contas Vencidas</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Contas Vencidas</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-red-600">{formatCurrency(totalVencido)}</div>
-            <p className="text-xs text-gray-500">
+            <p className="text-xs text-muted-foreground">
               {contas.filter(c => c.status === 'overdue').length} contas vencidas
             </p>
           </CardContent>
@@ -178,11 +178,11 @@ export function ContasReceber() {
 
         <Card className="border-l-4 border-l-green-500">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600">Recebido Total</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Recebido Total</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-green-600">{formatCurrency(totalRecebido)}</div>
-            <p className="text-xs text-gray-500">
+            <p className="text-xs text-muted-foreground">
               {contas.filter(c => c.status === 'received').length} contas recebidas
             </p>
           </CardContent>
@@ -222,7 +222,7 @@ export function ContasReceber() {
             </TableHeader>
             <TableBody>
               {contasFiltradas.map((conta) => (
-                <TableRow key={conta.id} className="hover:bg-gray-50">
+                <TableRow key={conta.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
                   <TableCell className="font-medium">{conta.client_name}</TableCell>
                   <TableCell>{conta.description}</TableCell>
                   <TableCell>{formatCurrency(Number(conta.amount))}</TableCell>
@@ -253,7 +253,7 @@ export function ContasReceber() {
             </TableBody>
           </Table>
           {contasFiltradas.length === 0 && (
-            <div className="text-center py-8 text-gray-500">
+            <div className="text-center py-8 text-muted-foreground">
               {searchTerm ? "Nenhuma conta encontrada com os critérios de busca." : "Nenhuma conta a receber cadastrada."}
             </div>
           )}

@@ -122,7 +122,7 @@ export function Dashboard() {
   if (!dashboardData) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-lg text-gray-500">Não foi possível carregar os dados.</div>
+        <div className="text-lg text-muted-foreground">Não foi possível carregar os dados.</div>
       </div>
     );
   }
@@ -131,8 +131,8 @@ export function Dashboard() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-800">Dashboard</h1>
-          <p className="text-gray-600 mt-1">Visão geral do seu negócio - {company?.name}</p>
+          <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
+          <p className="text-muted-foreground mt-1">Visão geral do seu negócio - {company?.name}</p>
         </div>
         <div className="flex space-x-2">
           <Button variant="outline" size="sm">Esta Semana</Button>
@@ -145,14 +145,14 @@ export function Dashboard() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <Card className={`border-l-4 ${dashboardData.balance.total_balance >= 0 ? 'border-l-green-500' : 'border-l-red-500'} hover:shadow-lg transition-shadow`}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600">Saldo Total</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Saldo Total</CardTitle>
             <DollarSign className={`h-4 w-4 ${dashboardData.balance.total_balance >= 0 ? 'text-green-600' : 'text-red-600'}`} />
           </CardHeader>
           <CardContent>
             <div className={`text-2xl font-bold ${dashboardData.balance.total_balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
               {formatCurrency(Number(dashboardData.balance.total_balance))}
             </div>
-            <p className="text-xs text-gray-500 flex items-center mt-1">
+            <p className="text-xs text-muted-foreground flex items-center mt-1">
               <TrendingUp className="w-3 h-3 mr-1" />
               A receber - A pagar
             </p>
@@ -161,40 +161,40 @@ export function Dashboard() {
 
         <Card className="border-l-4 border-l-blue-500 hover:shadow-lg transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600">A Receber</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">A Receber</CardTitle>
             <TrendingUp className="h-4 w-4 text-blue-600" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-blue-600">
               {formatCurrency(Number(dashboardData.receivableTotals.total_open))}
             </div>
-            <p className="text-xs text-gray-500">{dashboardData.receivableTotals.count_open} contas em aberto</p>
+            <p className="text-xs text-muted-foreground">{dashboardData.receivableTotals.count_open} contas em aberto</p>
           </CardContent>
         </Card>
 
         <Card className="border-l-4 border-l-red-500 hover:shadow-lg transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600">A Pagar</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">A Pagar</CardTitle>
             <TrendingDown className="h-4 w-4 text-red-600" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-red-600">
               {formatCurrency(Number(dashboardData.payableTotals.total_open))}
             </div>
-            <p className="text-xs text-gray-500">{dashboardData.payableTotals.count_open} contas em aberto</p>
+            <p className="text-xs text-muted-foreground">{dashboardData.payableTotals.count_open} contas em aberto</p>
           </CardContent>
         </Card>
 
         <Card className="border-l-4 border-l-purple-500 hover:shadow-lg transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600">Clientes Ativos</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Clientes Ativos</CardTitle>
             <Users className="h-4 w-4 text-purple-600" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-purple-600">
               {dashboardData.receivableTotals.count_open + dashboardData.receivableTotals.count_received}
             </div>
-            <p className="text-xs text-gray-500">Total de clientes</p>
+            <p className="text-xs text-muted-foreground">Total de clientes</p>
           </CardContent>
         </Card>
       </div>

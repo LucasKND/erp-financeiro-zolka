@@ -163,3 +163,32 @@ All colors MUST be HSL.
 .dark .hover-card:hover {
   box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
 }
+
+/* Sidebar collapsed state improvements */
+[data-sidebar="sidebar"][data-state="collapsed"] [data-sidebar="menu-button"] {
+  width: 40px !important;
+  height: 40px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  margin: 0 auto !important;
+  padding: 0 !important;
+}
+
+[data-sidebar="sidebar"][data-state="collapsed"] [data-sidebar="menu-button"] svg {
+  margin: 0 auto !important;
+}
+
+/* Ensure perfect icon alignment in collapsed sidebar */
+[data-sidebar="sidebar"][data-state="collapsed"] [data-sidebar="menu"] {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
+[data-sidebar="sidebar"][data-state="collapsed"] [data-sidebar="menu"] > * {
+  width: 48px;
+  display: flex;
+  justify-content: center;
+}

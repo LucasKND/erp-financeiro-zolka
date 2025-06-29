@@ -46,7 +46,7 @@ export function PersonalInfoForm({
         <Input
           id="email"
           type="email"
-          placeholder="seu@email.com"
+          placeholder="seuemail@email.com"
           value={email}
           onChange={(e) => onEmailChange(e.target.value)}
           required

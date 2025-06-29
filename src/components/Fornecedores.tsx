@@ -4,10 +4,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, Filter, Eye, Building, Mail, Phone } from "lucide-react";
+import { Plus, Search, Filter, Eye, Building, Mail, Phone, MoreHorizontal, Edit, Trash2, CreditCard } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { NovoFornecedorDialog } from "./NovoFornecedorDialog";
+import { ConfirmDeleteDialog } from "./ConfirmDeleteDialog";
 
-const fornecedores = [
+const fornecedoresIniciais = [
   {
     id: 1,
     nome: "Fornecedor ABC",
@@ -51,6 +54,82 @@ const fornecedores = [
 
 export function Fornecedores() {
   const [searchTerm, setSearchTerm] = useState("");
+  const [modalOpen, setModalOpen] = useState(false);
+  const [fornecedores, setFornecedores] = useState(fornecedoresIniciais);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [fornecedorToDelete, setFornecedorToDelete] = useState<any>(null);
+  const [fornecedorParaEdicao, setFornecedorParaEdicao] = useState<any>(null);
+  const [modoEdicao, setModoEdicao] = useState(false);
+
+  const adicionarFornecedor = (novoFornecedor: any) => {
+    if (modoEdicao && novoFornecedor.id) {
+      // Modo edição - atualizar fornecedor existente
+      setFornecedores(prev => prev.map(f => 
+        f.id === novoFornecedor.id 
+          ? {
+              ...f,
+              ...novoFornecedor,
+              tipo: novoFornecedor.tipo === "pessoa-juridica" ? "Pessoa Jurídica" : "Pessoa Física",
+              documento: novoFornecedor.cnpj || novoFornecedor.cpf || f.documento
+            }
+          : f
+      ));
+    } else {
+      // Modo criação - adicionar novo fornecedor
+      const fornecedorComId = {
+        ...novoFornecedor,
+        id: fornecedores.length + 1,
+        tipo: novoFornecedor.tipo === "pessoa-juridica" ? "Pessoa Jurídica" : "Pessoa Física",
+        documento: novoFornecedor.cnpj || novoFornecedor.cpf || "",
+        categoria: "Geral", // Categoria padrão
+        contasAbertas: 0,
+        valorTotal: 0,
+        ultimaTransacao: new Date().toISOString().split('T')[0]
+      };
+      setFornecedores(prev => [...prev, fornecedorComId]);
+    }
+    
+    // Reset do modo edição
+    setModoEdicao(false);
+    setFornecedorParaEdicao(null);
+  };
+
+  const editarFornecedor = (id: number) => {
+    const fornecedor = fornecedores.find(f => f.id === id);
+    if (fornecedor) {
+      setFornecedorParaEdicao(fornecedor);
+      setModoEdicao(true);
+      setModalOpen(true);
+    }
+  };
+
+  const visualizarContas = (id: number) => {
+    const fornecedor = fornecedores.find(f => f.id === id);
+    if (fornecedor) {
+      // TODO: Implementar navegação para tela de contas a pagar filtrada por fornecedor
+      // Por enquanto, mostrar informação simples
+      if (fornecedor.contasAbertas > 0) {
+        alert(`${fornecedor.nome} possui ${fornecedor.contasAbertas} conta(s) em aberto no valor total de ${formatCurrency(fornecedor.valorTotal)}.`);
+      } else {
+        alert(`${fornecedor.nome} não possui contas em aberto no momento.`);
+      }
+    }
+  };
+
+  const deletarFornecedor = (id: number) => {
+    const fornecedor = fornecedores.find(f => f.id === id);
+    if (fornecedor) {
+      setFornecedorToDelete(fornecedor);
+      setDeleteDialogOpen(true);
+    }
+  };
+
+  const confirmarDelecao = () => {
+    if (fornecedorToDelete) {
+      setFornecedores(prev => prev.filter(f => f.id !== fornecedorToDelete.id));
+      setFornecedorToDelete(null);
+    }
+  };
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -63,10 +142,17 @@ export function Fornecedores() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-800">Fornecedores</h1>
-          <p className="text-gray-600 mt-1">Gerencie sua base de fornecedores</p>
+          <h1 className="text-3xl font-bold text-foreground">Fornecedores</h1>
+          <p className="text-muted-foreground mt-1">Gerencie sua base de fornecedores</p>
         </div>
-        <Button className="bg-blue-600 hover:bg-blue-700">
+        <Button 
+          className="bg-blue-600 hover:bg-blue-700"
+          onClick={() => {
+            setModoEdicao(false);
+            setFornecedorParaEdicao(null);
+            setModalOpen(true);
+          }}
+        >
           <Plus className="w-4 h-4 mr-2" />
           Novo Fornecedor
         </Button>
@@ -162,7 +248,7 @@ export function Fornecedores() {
             </TableHeader>
             <TableBody>
               {fornecedores.map((fornecedor) => (
-                <TableRow key={fornecedor.id} className="hover:bg-gray-50">
+                <TableRow key={fornecedor.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
                   <TableCell className="font-medium">{fornecedor.nome}</TableCell>
                   <TableCell>{fornecedor.documento}</TableCell>
                   <TableCell>
@@ -188,9 +274,31 @@ export function Fornecedores() {
                   </TableCell>
                   <TableCell>{formatCurrency(fornecedor.valorTotal)}</TableCell>
                   <TableCell>
-                    <Button variant="ghost" size="sm">
-                      <Eye className="w-4 h-4" />
-                    </Button>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-48">
+                        <DropdownMenuItem onClick={() => editarFornecedor(fornecedor.id)}>
+                          <Edit className="mr-2 h-4 w-4" />
+                          Editar
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => visualizarContas(fornecedor.id)}>
+                          <CreditCard className="mr-2 h-4 w-4" />
+                          Visualizar Contas a Pagar
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem 
+                          onClick={() => deletarFornecedor(fornecedor.id)}
+                          className="text-red-600 focus:text-red-600"
+                        >
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          Deletar
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </TableCell>
                 </TableRow>
               ))}
@@ -198,6 +306,29 @@ export function Fornecedores() {
           </Table>
         </CardContent>
       </Card>
+
+      <NovoFornecedorDialog 
+        open={modalOpen} 
+        onOpenChange={(open) => {
+          setModalOpen(open);
+          if (!open) {
+            setModoEdicao(false);
+            setFornecedorParaEdicao(null);
+          }
+        }}
+        onSalvar={adicionarFornecedor}
+        fornecedorParaEdicao={fornecedorParaEdicao}
+        modoEdicao={modoEdicao}
+      />
+
+      <ConfirmDeleteDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        onConfirm={confirmarDelecao}
+        title="Confirmar exclusão"
+        description="Esta ação não pode ser desfeita. Todos os dados relacionados ao fornecedor serão permanentemente removidos."
+        itemName={fornecedorToDelete?.nome}
+      />
     </div>
   );
 }

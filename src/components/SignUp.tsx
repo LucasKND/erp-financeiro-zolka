@@ -29,7 +29,7 @@ export function SignUp({ onBackToLogin }: SignUpProps) {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-white p-4">
+    <div className="min-h-screen flex items-center justify-center bg-gray-900 p-4">
       <Card className="w-full max-w-md border-gray-700 bg-[#0f0f0f]">
         <CardHeader className="text-center">
           <div className="flex items-center justify-between mb-4">
@@ -44,7 +44,7 @@ export function SignUp({ onBackToLogin }: SignUpProps) {
             </Button>
             <div className="flex items-center gap-3">
               <img 
-                src="/lovable-uploads/52673621-85bc-477d-80da-681dbd853793.png" 
+                src="/lovable-uploads/ZolkaLogoWhite.png" 
                 alt="ZOLKA Logo" 
                 className="h-8 w-auto" 
               />

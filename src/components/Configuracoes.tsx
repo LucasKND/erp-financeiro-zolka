@@ -13,8 +13,8 @@ export function Configuracoes() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-800">Configurações</h1>
-          <p className="text-gray-600 mt-1">Gerencie as configurações do sistema</p>
+          <h1 className="text-3xl font-bold text-foreground">Configurações</h1>
+          <p className="text-muted-foreground mt-1">Gerencie as configurações do sistema</p>
         </div>
       </div>
 

@@ -159,8 +159,8 @@ export function Relatorios() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-800">Relatórios</h1>
-          <p className="text-gray-600 mt-1">Análises financeiras e relatórios gerenciais - {company?.name}</p>
+          <h1 className="text-3xl font-bold text-foreground">Relatórios</h1>
+          <p className="text-muted-foreground mt-1">Análises financeiras e relatórios gerenciais - {company?.name}</p>
         </div>
         <Button variant="outline" className="text-green-600 border-green-300">
           <Download className="w-4 h-4 mr-2" />

@@ -1,7 +1,6 @@
 
-import { Bell, Search, User } from "lucide-react";
+import { Bell, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { NotificationDropdown } from "./NotificationDropdown";
@@ -17,16 +16,11 @@ export function TopBar({ setActiveModule }: TopBarProps) {
 
   return (
     <header className="flex items-center justify-between px-6 py-4 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 shadow-sm">
-      {/* Search Section */}
-      <div className="flex items-center flex-1 max-w-md">
-        <div className="relative w-full">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-          <Input
-            type="text"
-            placeholder="Buscar transações, clientes..."
-            className="pl-10 bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-600 focus:border-yellow-500 dark:focus:border-yellow-400"
-          />
-        </div>
+      {/* Greeting Section */}
+      <div className="flex items-center">
+        <h1 className="text-xl font-semibold text-gray-800 dark:text-gray-200">
+          Olá, {user?.email?.split('@')[0] || "Usuário"}
+        </h1>
       </div>
 
       {/* Right Section */}

@@ -26,31 +26,83 @@ export function Auth() {
     setError(null);
 
     try {
+      console.log('Tentando fazer login com:', loginData.email);
+      
       const { data, error } = await supabase.auth.signInWithPassword({
         email: loginData.email,
         password: loginData.password
       });
 
+      console.log('Resposta do login:', { data, error });
+
       if (error) {
+        console.error('Erro de login:', error);
+        
         if (error.message.includes('Invalid login credentials')) {
           setError('Email ou senha incorretos. Verifique suas credenciais.');
         } else if (error.message.includes('Email not confirmed')) {
-          setError('Por favor, confirme seu email antes de fazer login.');
+          // Verificar se o usuário realmente existe e se o email foi confirmado
+          console.log('Erro de email não confirmado, verificando status...');
+          
+          setError('Seu email ainda não foi confirmado. Verifique sua caixa de entrada e clique no link de confirmação. Se não recebeu o email, você pode solicitar um novo.');
+          
+          // Oferecer opção de reenviar email de confirmação
+          toast({
+            title: "Email não confirmado",
+            description: "Verifique sua caixa de entrada ou spam. Se necessário, faça um novo cadastro.",
+            variant: "destructive"
+          });
         } else {
-          setError('Erro ao fazer login. Verifique suas credenciais.');
+          setError(`Erro ao fazer login: ${error.message}`);
         }
         return;
       }
 
       if (data.user) {
+        console.log('Login bem-sucedido para usuário:', data.user.id);
+        console.log('Email confirmado:', data.user.email_confirmed_at);
+        
         toast({
           title: "Login realizado com sucesso!",
           description: "Bem-vindo ao Sistema ERP."
         });
       }
     } catch (err) {
+      console.error('Erro inesperado no login:', err);
       setError('Erro inesperado. Tente novamente.');
-      console.error('Login error:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleResendConfirmation = async () => {
+    if (!loginData.email) {
+      setError('Digite seu email primeiro.');
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email: loginData.email,
+        options: {
+          emailRedirectTo: `${window.location.origin}/`
+        }
+      });
+
+      if (error) {
+        console.error('Erro ao reenviar confirmação:', error);
+        setError('Erro ao reenviar email de confirmação.');
+      } else {
+        toast({
+          title: "Email reenviado!",
+          description: "Verifique sua caixa de entrada para confirmar seu email."
+        });
+      }
+    } catch (err) {
+      console.error('Erro ao reenviar confirmação:', err);
+      setError('Erro inesperado ao reenviar confirmação.');
     } finally {
       setIsLoading(false);
     }
@@ -79,7 +131,22 @@ export function Auth() {
         <CardContent>
           {error && (
             <Alert variant="destructive" className="mb-4">
-              <AlertDescription>{error}</AlertDescription>
+              <AlertDescription>
+                {error}
+                {error.includes('não foi confirmado') && (
+                  <div className="mt-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleResendConfirmation}
+                      disabled={isLoading}
+                      className="text-xs"
+                    >
+                      Reenviar email de confirmação
+                    </Button>
+                  </div>
+                )}
+              </AlertDescription>
             </Alert>
           )}
 

@@ -1,95 +1,68 @@
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Bell, User, LogOut, Settings } from "lucide-react";
-import { useAuth } from "@/hooks/useAuth";
-import { useToast } from "@/hooks/use-toast";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { NotificationDropdown } from "./NotificationDropdown";
-export function TopBar({
-  setActiveModule
-}: {
-  setActiveModule?: (module: string) => void;
-}) {
-  const {
-    user,
-    signOut
-  } = useAuth();
-  const {
-    toast
-  } = useToast();
-  const handleSignOut = async () => {
-    try {
-      await signOut();
-      toast({
-        title: "Logout realizado",
-        description: "Você foi desconectado com sucesso."
-      });
-    } catch (error) {
-      toast({
-        title: "Erro ao fazer logout",
-        description: "Tente novamente.",
-        variant: "destructive"
-      });
-    }
-  };
 
-  // Extract user name from metadata or email
-  const getUserName = () => {
-    if (user?.user_metadata?.full_name) {
-      return user.user_metadata.full_name;
-    }
-    if (user?.user_metadata?.first_name && user?.user_metadata?.last_name) {
-      return `${user.user_metadata.first_name} ${user.user_metadata.last_name}`;
-    }
-    if (user?.user_metadata?.name) {
-      return user.user_metadata.name;
-    }
-    // Fallback to email if no name is available
-    return user?.email?.split('@')[0] || 'Usuário';
-  };
-  return <header className="h-16 border-b border-gray-200 bg-white px-6 flex items-center justify-between">
-      <div className="flex items-center space-x-4">
-        <div>
-          <h2 className="text-lg font-semibold text-gray-800">Olá, {getUserName()}!</h2>
-          
+import { Bell, Search, User } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { NotificationDropdown } from "./NotificationDropdown";
+import { ThemeToggle } from "./ThemeToggle";
+import { useAuth } from "@/hooks/useAuth";
+
+interface TopBarProps {
+  setActiveModule: (module: string) => void;
+}
+
+export function TopBar({ setActiveModule }: TopBarProps) {
+  const { user, signOut } = useAuth();
+
+  return (
+    <header className="flex items-center justify-between px-6 py-4 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 shadow-sm">
+      {/* Search Section */}
+      <div className="flex items-center flex-1 max-w-md">
+        <div className="relative w-full">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+          <Input
+            type="text"
+            placeholder="Buscar transações, clientes..."
+            className="pl-10 bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-600 focus:border-yellow-500 dark:focus:border-yellow-400"
+          />
         </div>
       </div>
-      
-      <div className="flex items-center space-x-4">
-        {/* Notificações */}
-        <NotificationDropdown setActiveModule={setActiveModule || (() => {})} />
 
-        {/* Menu do usuário */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="sm" className="flex items-center space-x-2">
-              <User className="w-5 h-5" />
-              <span className="hidden md:inline">{getUserName()}</span>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-56">
-            <DropdownMenuLabel>
-              <div className="flex flex-col space-y-1">
-                <p className="text-sm font-medium">{getUserName()}</p>
-                <p className="text-xs text-gray-500">{user?.email}</p>
-              </div>
-            </DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => setActiveModule?.('configuracoes')}>
-              <User className="mr-2 h-4 w-4" />
-              Minha Empresa
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setActiveModule?.('configuracoes')}>
-              <Settings className="mr-2 h-4 w-4" />
-              Configurações
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={handleSignOut} className="text-red-600">
-              <LogOut className="mr-2 h-4 w-4" />
-              Sair
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+      {/* Right Section */}
+      <div className="flex items-center space-x-4">
+        {/* Theme Toggle */}
+        <ThemeToggle />
+
+        {/* Notifications */}
+        <NotificationDropdown />
+
+        {/* User Menu */}
+        <div className="flex items-center space-x-3">
+          <div className="text-right">
+            <div className="text-sm font-medium text-gray-700 dark:text-gray-200">
+              {user?.email || "Usuário"}
+            </div>
+            <div className="text-xs text-gray-500 dark:text-gray-400">
+              Administrador
+            </div>
+          </div>
+          <Avatar className="w-8 h-8">
+            <AvatarImage src="/placeholder-avatar.jpg" alt="User" />
+            <AvatarFallback className="bg-yellow-500 text-white text-sm">
+              <User className="w-4 h-4" />
+            </AvatarFallback>
+          </Avatar>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={signOut}
+            className="text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100"
+          >
+            Sair
+          </Button>
+        </div>
       </div>
-    </header>;
+    </header>
+  );
 }

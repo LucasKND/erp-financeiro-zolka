@@ -15,8 +15,6 @@ import { Configuracoes } from "@/components/Configuracoes";
 import { Auth } from "@/components/Auth";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertTriangle } from "lucide-react";
 
 const Index = () => {
   const [activeModule, setActiveModule] = useState("dashboard");
@@ -33,8 +31,8 @@ const Index = () => {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
-          <div className="w-12 h-12 bg-gradient-to-r from-yellow-500 to-yellow-600 rounded-lg flex items-center justify-center mx-auto mb-4 animate-pulse">
-            <span className="text-white font-bold text-lg">Z</span>
+          <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg flex items-center justify-center mx-auto mb-4 animate-pulse">
+            <span className="text-white font-bold text-lg">ERP</span>
           </div>
           <div className="text-lg text-gray-600">Carregando seu perfil...</div>
         </div>
@@ -42,24 +40,11 @@ const Index = () => {
     );
   }
 
-  // Show error message if user doesn't have profile or company access
+  // If user is authenticated but doesn't have profile/company, 
+  // they shouldn't reach here (login should handle this validation)
+  // But if they do, just redirect back to login
   if (!profile || !company) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-        <div className="max-w-md w-full">
-          <Alert variant="destructive">
-            <AlertTriangle className="h-4 w-4" />
-            <AlertDescription className="text-center">
-              <div className="mb-2 font-semibold">Acesso não autorizado</div>
-              <div className="text-sm">
-                Seu usuário não possui perfil ou empresa configurados no sistema. 
-                Entre em contato com o administrador para solicitar acesso.
-              </div>
-            </AlertDescription>
-          </Alert>
-        </div>
-      </div>
-    );
+    return <Auth />;
   }
 
   const renderActiveModule = () => {

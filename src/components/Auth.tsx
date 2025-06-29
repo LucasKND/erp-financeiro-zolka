@@ -36,12 +36,38 @@ export function Auth() {
         } else if (error.message.includes('Email not confirmed')) {
           setError('Por favor, confirme seu email antes de fazer login.');
         } else {
-          setError(error.message);
+          setError('Erro ao fazer login. Verifique suas credenciais.');
         }
         return;
       }
 
       if (data.user) {
+        // Check if user has profile and company access
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', data.user.id)
+          .maybeSingle();
+
+        if (profileError || !profileData) {
+          setError('Usuário não autorizado. Entre em contato com o administrador.');
+          await supabase.auth.signOut();
+          return;
+        }
+
+        // Check if company exists
+        const { data: companyData, error: companyError } = await supabase
+          .from('companies')
+          .select('*')
+          .eq('id', profileData.company_id)
+          .maybeSingle();
+
+        if (companyError || !companyData) {
+          setError('Empresa não encontrada. Entre em contato com o administrador.');
+          await supabase.auth.signOut();
+          return;
+        }
+
         toast({
           title: "Login realizado com sucesso!",
           description: "Bem-vindo ao Sistema ERP.",

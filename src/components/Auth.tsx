@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -55,75 +56,64 @@ export function Auth() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-white p-4">
-      <div className="relative">
-        {/* Logo positioned absolutely at the top center */}
-        <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 z-10">
-          <img 
-            src="/lovable-uploads/f145b6bd-8c26-4f1a-a832-5855b8d850d5.png" 
-            alt="Zolka Logo" 
-            className="w-24 h-24 object-contain"
-          />
-        </div>
-        
-        <Card className="w-full max-w-md bg-black border-gray-700 pt-12">
-          <CardHeader className="text-center pb-2">
-            <CardTitle className="text-2xl font-bold text-yellow-500">ZOLKA ERP</CardTitle>
-            <CardDescription className="text-gray-300">
-              Gestão financeira empresarial completa
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {error && (
-              <Alert variant="destructive" className="mb-4">
-                <AlertDescription>{error}</AlertDescription>
-              </Alert>
-            )}
+      <Card className="w-full max-w-md bg-black border-gray-700">
+        <CardHeader className="text-center">
+          <CardTitle className="text-2xl font-bold text-yellow-500">ZOLKA ERP</CardTitle>
+          <CardDescription className="text-gray-300">
+            Gestão financeira empresarial completa
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {error && (
+            <Alert variant="destructive" className="mb-4">
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
 
-            <form onSubmit={handleLogin} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="login-email" className="text-yellow-500">Email</Label>
-                <Input
-                  id="login-email"
-                  type="email"
-                  placeholder="seu@email.com"
-                  value={loginData.email}
-                  onChange={(e) =>
-                    setLoginData((prev) => ({ ...prev, email: e.target.value }))
-                  }
-                  required
-                  disabled={isLoading}
-                  className="bg-gray-800 border-gray-600 text-white placeholder-gray-400"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="login-password" className="text-yellow-500">Senha</Label>
-                <Input
-                  id="login-password"
-                  type="password"
-                  placeholder="Sua senha"
-                  value={loginData.password}
-                  onChange={(e) =>
-                    setLoginData((prev) => ({ ...prev, password: e.target.value }))
-                  }
-                  required
-                  disabled={isLoading}
-                  className="bg-gray-800 border-gray-600 text-white placeholder-gray-400"
-                />
-              </div>
-              <Button type="submit" className="w-full bg-yellow-500 hover:bg-yellow-600 text-black font-semibold" disabled={isLoading}>
-                {isLoading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Entrando...
-                  </>
-                ) : (
-                  "Entrar"
-                )}
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
-      </div>
+          <form onSubmit={handleLogin} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="login-email" className="text-yellow-500">Email</Label>
+              <Input
+                id="login-email"
+                type="email"
+                placeholder="seu@email.com"
+                value={loginData.email}
+                onChange={(e) =>
+                  setLoginData((prev) => ({ ...prev, email: e.target.value }))
+                }
+                required
+                disabled={isLoading}
+                className="bg-gray-800 border-gray-600 text-white placeholder-gray-400"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="login-password" className="text-yellow-500">Senha</Label>
+              <Input
+                id="login-password"
+                type="password"
+                placeholder="Sua senha"
+                value={loginData.password}
+                onChange={(e) =>
+                  setLoginData((prev) => ({ ...prev, password: e.target.value }))
+                }
+                required
+                disabled={isLoading}
+                className="bg-gray-800 border-gray-600 text-white placeholder-gray-400"
+              />
+            </div>
+            <Button type="submit" className="w-full bg-yellow-500 hover:bg-yellow-600 text-black font-semibold" disabled={isLoading}>
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Entrando...
+                </>
+              ) : (
+                "Entrar"
+              )}
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
     </div>
   );
 }

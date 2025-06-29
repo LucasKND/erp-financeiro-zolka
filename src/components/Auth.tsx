@@ -70,7 +70,7 @@ export function Auth() {
 
           <form onSubmit={handleLogin} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="login-email" className="text-yellow-500">ERP</Label>
+              <Label htmlFor="login-email" className="text-yellow-500">Email</Label>
               <Input id="login-email" type="email" placeholder="seu@email.com" value={loginData.email} onChange={e => setLoginData(prev => ({
               ...prev,
               email: e.target.value

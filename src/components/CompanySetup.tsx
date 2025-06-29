@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -14,6 +13,7 @@ interface CompanySetupProps {
 
 export function CompanySetup({ onSetupComplete }: CompanySetupProps) {
   const [companyName, setCompanyName] = useState("2GO Marketing");
+  const [accessCode, setAccessCode] = useState("ZOLKA2024");
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
@@ -26,11 +26,12 @@ export function CompanySetup({ onSetupComplete }: CompanySetupProps) {
     try {
       console.log('Setting up company for user:', user.id);
       
-      // Verificar se já existe uma empresa com esse nome
+      // Verificar se já existe uma empresa com esse nome e código
       let { data: existingCompany } = await supabase
         .from('companies')
         .select('*')
         .eq('name', companyName)
+        .eq('access_code', accessCode)
         .maybeSingle();
 
       let companyId;
@@ -39,10 +40,13 @@ export function CompanySetup({ onSetupComplete }: CompanySetupProps) {
         companyId = existingCompany.id;
         console.log('Using existing company:', existingCompany);
       } else {
-        // Criar nova empresa
+        // Criar nova empresa com access_code
         const { data: newCompany, error: companyError } = await supabase
           .from('companies')
-          .insert([{ name: companyName }])
+          .insert([{ 
+            name: companyName,
+            access_code: accessCode
+          }])
           .select()
           .single();
 
@@ -150,7 +154,18 @@ export function CompanySetup({ onSetupComplete }: CompanySetupProps) {
                 required
               />
             </div>
-            <Button type="submit" className="w-full" disabled={loading || !companyName.trim()}>
+            <div className="space-y-2">
+              <Label htmlFor="accessCode">Código de Acesso</Label>
+              <Input
+                id="accessCode"
+                type="text"
+                placeholder="Digite o código de acesso da empresa"
+                value={accessCode}
+                onChange={(e) => setAccessCode(e.target.value)}
+                required
+              />
+            </div>
+            <Button type="submit" className="w-full" disabled={loading || !companyName.trim() || !accessCode.trim()}>
               {loading ? "Configurando..." : "Configurar Empresa"}
             </Button>
           </form>

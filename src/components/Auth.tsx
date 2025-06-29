@@ -1,5 +1,7 @@
+// src/pages/Auth.tsx (ou onde o arquivo estiver)
 
 import { useState } from "react";
+import { useNavigate } from "react-router-dom"; // <-- 1. ALTERAÇÃO AQUI
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,6 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { SignUp } from "./SignUp";
 
 export function Auth() {
+  const navigate = useNavigate(); // <-- 2. ALTERAÇÃO AQUI
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showSignUp, setShowSignUp] = useState(false);
@@ -41,12 +44,10 @@ export function Auth() {
         if (error.message.includes('Invalid login credentials')) {
           setError('Email ou senha incorretos. Verifique suas credenciais.');
         } else if (error.message.includes('Email not confirmed')) {
-          // Verificar se o usuário realmente existe e se o email foi confirmado
           console.log('Erro de email não confirmado, verificando status...');
           
           setError('Seu email ainda não foi confirmado. Verifique sua caixa de entrada e clique no link de confirmação. Se não recebeu o email, você pode solicitar um novo.');
           
-          // Oferecer opção de reenviar email de confirmação
           toast({
             title: "Email não confirmado",
             description: "Verifique sua caixa de entrada ou spam. Se necessário, faça um novo cadastro.",
@@ -60,14 +61,15 @@ export function Auth() {
 
       if (data.user) {
         console.log('Login bem-sucedido para usuário:', data.user.id);
-        console.log('Email confirmado:', data.user.email_confirmed_at);
         
         toast({
           title: "Login realizado com sucesso!",
           description: "Bem-vindo ao Sistema ERP."
         });
-            // ADICIONE ESTA LINHA:
-        window.location.href = "/";
+        
+        // A linha que você tinha antes, "window.location.href", também funciona,
+        // mas "navigate" é a forma recomendada para React com react-router-dom.
+        navigate('/'); // <-- 3. ALTERAÇÃO AQUI
       }
     } catch (err) {
       console.error('Erro inesperado no login:', err);

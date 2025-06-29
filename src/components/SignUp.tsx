@@ -50,9 +50,29 @@ export function SignUp({ onBackToLogin }: SignUpProps) {
     }
 
     try {
-      console.log('Iniciando cadastro para:', signUpData.email);
+      console.log('Verificando se a empresa existe:', signUpData.companyName);
 
-      // 1. Criar usuário no Supabase Auth
+      // 1. Verificar se a empresa existe
+      const { data: company, error: companyError } = await supabase
+        .from('companies')
+        .select('id, name')
+        .ilike('name', signUpData.companyName.trim())
+        .maybeSingle();
+
+      if (companyError) {
+        console.error('Erro ao buscar empresa:', companyError);
+        setError('Erro ao verificar empresa. Tente novamente.');
+        return;
+      }
+
+      if (!company) {
+        setError('Empresa não encontrada. Verifique o nome da empresa ou entre em contato com o administrador.');
+        return;
+      }
+
+      console.log('Empresa encontrada:', company.name, 'ID:', company.id);
+
+      // 2. Criar usuário no Supabase Auth
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: signUpData.email,
         password: signUpData.password,
@@ -60,7 +80,7 @@ export function SignUp({ onBackToLogin }: SignUpProps) {
           emailRedirectTo: `${window.location.origin}/`,
           data: {
             full_name: signUpData.fullName,
-            company_name: signUpData.companyName
+            company_name: company.name
           }
         }
       });
@@ -84,40 +104,12 @@ export function SignUp({ onBackToLogin }: SignUpProps) {
 
       console.log('Usuário criado:', authData.user.id);
 
-      // 2. Criar ou buscar empresa
-      let companyId;
-      const { data: existingCompany } = await supabase
-        .from('companies')
-        .select('id')
-        .eq('name', signUpData.companyName.trim())
-        .maybeSingle();
-
-      if (existingCompany) {
-        companyId = existingCompany.id;
-        console.log('Empresa existente encontrada:', companyId);
-      } else {
-        const { data: newCompany, error: companyError } = await supabase
-          .from('companies')
-          .insert([{ name: signUpData.companyName.trim() }])
-          .select()
-          .single();
-
-        if (companyError) {
-          console.error('Erro ao criar empresa:', companyError);
-          setError('Erro ao registrar empresa. Tente novamente.');
-          return;
-        }
-
-        companyId = newCompany.id;
-        console.log('Nova empresa criada:', companyId);
-      }
-
       // 3. Criar perfil do usuário
       const { error: profileError } = await supabase
         .from('profiles')
         .insert([{
           id: authData.user.id,
-          company_id: companyId,
+          company_id: company.id,
           full_name: signUpData.fullName.trim(),
           email: signUpData.email
         }]);
@@ -128,7 +120,7 @@ export function SignUp({ onBackToLogin }: SignUpProps) {
         const { error: updateError } = await supabase
           .from('profiles')
           .update({
-            company_id: companyId,
+            company_id: company.id,
             full_name: signUpData.fullName.trim()
           })
           .eq('id', authData.user.id);
@@ -145,7 +137,7 @@ export function SignUp({ onBackToLogin }: SignUpProps) {
         .from('user_roles')
         .insert([{
           user_id: authData.user.id,
-          company_id: companyId,
+          company_id: company.id,
           role: 'financeiro'
         }]);
 
@@ -159,7 +151,7 @@ export function SignUp({ onBackToLogin }: SignUpProps) {
 
       toast({
         title: "Conta criada com sucesso!",
-        description: "Sua conta foi criada. Você pode fazer login agora.",
+        description: `Sua conta foi criada para a empresa ${company.name}. Você pode fazer login agora.`,
       });
 
       // Voltar para tela de login
@@ -193,7 +185,7 @@ export function SignUp({ onBackToLogin }: SignUpProps) {
                 alt="ZOLKA Logo" 
                 className="h-8 w-auto" 
               />
-              <CardTitle className="text-xl font-bold text-yellow-500">ZOLKA ERP</CardTitle>
+              <CardTitle className="text-xl font-bold text-yellow-500">ERP</CardTitle>
             </div>
           </div>
           <CardDescription className="text-gray-300">
@@ -247,7 +239,7 @@ export function SignUp({ onBackToLogin }: SignUpProps) {
               <Input
                 id="companyName"
                 type="text"
-                placeholder="Nome da sua empresa"
+                placeholder="Digite o nome exato da sua empresa"
                 value={signUpData.companyName}
                 onChange={(e) => setSignUpData(prev => ({
                   ...prev,
@@ -257,6 +249,9 @@ export function SignUp({ onBackToLogin }: SignUpProps) {
                 disabled={isLoading}
                 className="border-gray-600 text-white placeholder-gray-400 bg-slate-50"
               />
+              <p className="text-xs text-gray-400">
+                Digite o nome exato da empresa cadastrada no sistema
+              </p>
             </div>
 
             <div className="space-y-2">
@@ -318,6 +313,9 @@ export function SignUp({ onBackToLogin }: SignUpProps) {
               >
                 Fazer login
               </button>
+            </p>
+            <p className="text-xs text-gray-500 mt-2">
+              Se sua empresa não está cadastrada, entre em contato com o administrador do sistema.
             </p>
           </div>
         </CardContent>

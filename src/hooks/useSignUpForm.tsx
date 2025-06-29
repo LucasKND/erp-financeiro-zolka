@@ -107,7 +107,7 @@ export function useSignUpForm() {
         return;
       }
 
-      console.log('User created, creating profile...');
+      console.log('User created successfully, user ID:', authData.user.id);
 
       // Create user profile
       const { error: profileError } = await supabase
@@ -135,11 +135,13 @@ export function useSignUpForm() {
           setError('Erro ao configurar perfil do usuário.');
           return;
         }
+        console.log('Profile updated successfully');
+      } else {
+        console.log('Profile created successfully');
       }
 
-      console.log('Profile created, creating role...');
-
-      // Assign financeiro role
+      // Assign financeiro role with better error handling
+      console.log('Creating user role for user:', authData.user.id);
       const { error: roleError } = await supabase
         .from('user_roles')
         .insert([{
@@ -148,10 +150,15 @@ export function useSignUpForm() {
           role: 'financeiro'
         }]);
 
-      if (roleError && roleError.code !== '23505') { // Ignore duplicate error
+      if (roleError) {
         console.error('Erro ao criar role:', roleError);
-        setError('Erro au configurar permissões do usuário.');
-        return;
+        if (roleError.code !== '23505') { // Ignore duplicate error
+          setError('Erro ao configurar permissões do usuário. Por favor, entre em contato com o suporte.');
+          return;
+        }
+        console.log('Role already exists, continuing...');
+      } else {
+        console.log('User role created successfully');
       }
 
       console.log('Signup completed successfully');

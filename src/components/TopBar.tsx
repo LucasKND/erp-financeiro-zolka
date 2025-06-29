@@ -5,6 +5,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { NotificationDropdown } from "./NotificationDropdown";
 import { ThemeToggle } from "./ThemeToggle";
+import { ProfileDropdown } from "./ProfileDropdown";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 
@@ -36,22 +37,6 @@ export function TopBar({ setActiveModule }: TopBarProps) {
     return "Usuário";
   };
 
-  const getDisplayName = () => {
-    // Try to get from user metadata first
-    if (user?.user_metadata?.full_name) {
-      return user.user_metadata.full_name;
-    }
-    if (user?.user_metadata?.name) {
-      return user.user_metadata.name;
-    }
-    // Then try profile
-    if (profile?.full_name) {
-      return profile.full_name;
-    }
-    // Finally fallback to email
-    return user?.email || "Usuário";
-  };
-
   return (
     <header className="flex items-center justify-between px-6 py-4 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 shadow-sm">
       {/* Greeting Section */}
@@ -69,31 +54,8 @@ export function TopBar({ setActiveModule }: TopBarProps) {
         {/* Notifications */}
         <NotificationDropdown setActiveModule={setActiveModule} />
 
-        {/* User Menu */}
-        <div className="flex items-center space-x-3">
-          <div className="text-right">
-            <div className="text-sm font-medium text-gray-700 dark:text-gray-200">
-              {getFirstName()}
-            </div>
-            <div className="text-xs text-gray-500 dark:text-gray-400">
-              Administrador
-            </div>
-          </div>
-          <Avatar className="w-8 h-8">
-            <AvatarImage src="/placeholder-avatar.jpg" alt="User" />
-            <AvatarFallback className="bg-yellow-500 text-white text-sm">
-              <User className="w-4 h-4" />
-            </AvatarFallback>
-          </Avatar>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={signOut}
-            className="text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100"
-          >
-            Sair
-          </Button>
-        </div>
+        {/* Profile Dropdown */}
+        <ProfileDropdown setActiveModule={setActiveModule} />
       </div>
     </header>
   );

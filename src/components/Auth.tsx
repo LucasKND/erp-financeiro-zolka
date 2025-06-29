@@ -97,7 +97,7 @@ export function Auth() {
                 }))}
                 required
                 disabled={isLoading}
-                className="border-gray-600 text-white placeholder-gray-400 bg-slate-50"
+                className="border-gray-600 text-gray-900 placeholder-gray-400 bg-white"
               />
             </div>
 
@@ -114,7 +114,7 @@ export function Auth() {
                 }))}
                 required
                 disabled={isLoading}
-                className="border-gray-600 text-white placeholder-gray-400 bg-slate-50"
+                className="border-gray-600 text-gray-900 placeholder-gray-400 bg-white"
               />
             </div>
 

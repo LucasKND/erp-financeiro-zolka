@@ -215,7 +215,7 @@ export function SignUp({ onBackToLogin }: SignUpProps) {
                 }))}
                 required
                 disabled={isLoading}
-                className="border-gray-600 text-white placeholder-gray-400 bg-slate-50"
+                className="border-gray-600 text-gray-900 placeholder-gray-400 bg-white"
               />
             </div>
 
@@ -232,7 +232,7 @@ export function SignUp({ onBackToLogin }: SignUpProps) {
                 }))}
                 required
                 disabled={isLoading}
-                className="border-gray-600 text-white placeholder-gray-400 bg-slate-50"
+                className="border-gray-600 text-gray-900 placeholder-gray-400 bg-white"
               />
             </div>
 
@@ -249,7 +249,7 @@ export function SignUp({ onBackToLogin }: SignUpProps) {
                 }))}
                 required
                 disabled={isLoading}
-                className="border-gray-600 text-white placeholder-gray-400 bg-slate-50"
+                className="border-gray-600 text-gray-900 placeholder-gray-400 bg-white"
               />
               <p className="text-xs text-gray-400">
                 Digite o nome exato da empresa cadastrada no sistema
@@ -269,7 +269,7 @@ export function SignUp({ onBackToLogin }: SignUpProps) {
                 }))}
                 required
                 disabled={isLoading}
-                className="border-gray-600 text-white placeholder-gray-400 bg-slate-50"
+                className="border-gray-600 text-gray-900 placeholder-gray-400 bg-white"
               />
               <p className="text-xs text-gray-400">
                 Digite o código de acesso fornecido pelo administrador da empresa
@@ -289,7 +289,7 @@ export function SignUp({ onBackToLogin }: SignUpProps) {
                 }))}
                 required
                 disabled={isLoading}
-                className="border-gray-600 text-white placeholder-gray-400 bg-slate-50"
+                className="border-gray-600 text-gray-900 placeholder-gray-400 bg-white"
               />
             </div>
 
@@ -306,7 +306,7 @@ export function SignUp({ onBackToLogin }: SignUpProps) {
                 }))}
                 required
                 disabled={isLoading}
-                className="border-gray-600 text-white placeholder-gray-400 bg-slate-50"
+                className="border-gray-600 text-gray-900 placeholder-gray-400 bg-white"
               />
             </div>
 

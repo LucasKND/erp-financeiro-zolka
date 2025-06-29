@@ -79,6 +79,7 @@ export function useSignUpForm() {
       console.log('Access code verified:', signUpData.accessCode);
 
       // Create user in Supabase Auth
+      // O trigger automático criará perfil e role quando o usuário for inserido
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: signUpData.email,
         password: signUpData.password,
@@ -109,72 +110,18 @@ export function useSignUpForm() {
       }
 
       console.log('User created successfully, user ID:', authData.user.id);
+      console.log('Trigger automático criará perfil e role automaticamente');
 
-      // Wait a moment for auth to be fully processed
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      // Create user profile
-      console.log('Creating profile for user:', authData.user.id);
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .insert([{
-          id: authData.user.id,
-          company_id: selectedCompany.id,
-          full_name: signUpData.fullName.trim(),
-          email: signUpData.email
-        }]);
-
-      if (profileError) {
-        console.error('Erro ao criar perfil:', profileError);
-        // Try to update existing profile if insert failed
-        const { error: updateError } = await supabase
-          .from('profiles')
-          .update({
-            company_id: selectedCompany.id,
-            full_name: signUpData.fullName.trim()
-          })
-          .eq('id', authData.user.id);
-
-        if (updateError) {
-          console.error('Erro ao atualizar perfil:', updateError);
-          setError('Erro ao configurar perfil do usuário.');
-          return;
-        }
-        console.log('Profile updated successfully');
-      } else {
-        console.log('Profile created successfully');
-      }
-
-      // Wait another moment for profile to be created
-      await new Promise(resolve => setTimeout(resolve, 500));
-
-      // Assign financeiro role
-      console.log('Creating user role for user:', authData.user.id);
-      const { error: roleError } = await supabase
-        .from('user_roles')
-        .insert([{
-          user_id: authData.user.id,
-          company_id: selectedCompany.id,
-          role: 'financeiro'
-        }]);
-
-      if (roleError) {
-        console.error('Erro ao criar role:', roleError);
-        if (roleError.code !== '23505') { // Ignore duplicate error
-          console.error('Role creation failed with error:', roleError);
-          setError(`Erro ao configurar permissões: ${roleError.message}`);
-          return;
-        }
-        console.log('Role already exists, continuing...');
-      } else {
-        console.log('User role created successfully');
-      }
+      // Aguardar um pouco para o trigger processar
+      await new Promise(resolve => setTimeout(resolve, 2000));
 
       console.log('Signup completed successfully');
 
       toast({
         title: "Conta criada com sucesso!",
-        description: `Sua conta foi criada para a empresa ${selectedCompany.name}. Você pode fazer login agora.`,
+        description: `Sua conta foi criada para a empresa ${selectedCompany.name}. ${
+          authData.user.email_confirmed_at ? 'Você pode fazer login agora.' : 'Verifique seu email para confirmar a conta antes de fazer login.'
+        }`,
       });
 
       onSuccess();

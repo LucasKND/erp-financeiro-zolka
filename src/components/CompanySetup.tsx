@@ -69,17 +69,17 @@ export function CompanySetup({ onSetupComplete }: CompanySetupProps) {
         console.log('Profile created with company_id');
       }
 
-      // Create admin role for the user
+      // Create financeiro role for the user
       const { error: roleError } = await supabase
         .from('user_roles')
         .insert([{
           user_id: user.id,
           company_id: company.id,
-          role: 'admin'
+          role: 'financeiro'
         }]);
 
       if (roleError) throw roleError;
-      console.log('Admin role created');
+      console.log('Financeiro role created');
 
       toast({
         title: "Empresa configurada!",

@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Loader2, Building2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -60,7 +60,11 @@ export function Auth() {
         <CardHeader className="text-center">
           <div className="flex justify-center mb-4">
             <div className="p-3 bg-yellow-500 rounded-lg">
-              <Building2 className="w-8 h-8 text-black" />
+              <img 
+                src="/lovable-uploads/f145b6bd-8c26-4f1a-a832-5855b8d850d5.png" 
+                alt="Zolka Logo" 
+                className="w-8 h-8 object-contain"
+              />
             </div>
           </div>
           <CardTitle className="text-2xl font-bold text-yellow-500">ZOLKA ERP</CardTitle>

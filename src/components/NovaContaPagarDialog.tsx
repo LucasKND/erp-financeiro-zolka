@@ -21,13 +21,17 @@ import {
 } from "@/components/ui/select";
 import { Plus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { useProfile } from "@/hooks/useProfile";
+import { generateRecurrenceEvents } from "@/lib/dateUtils";
 
 interface NovaContaPagarDialogProps {
-  onContaAdicionada: (conta: any) => void;
+  onContaAdicionada: () => void;
 }
 
 export function NovaContaPagarDialog({ onContaAdicionada }: NovaContaPagarDialogProps) {
   const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     fornecedor: "",
     descricao: "",
@@ -38,49 +42,78 @@ export function NovaContaPagarDialog({ onContaAdicionada }: NovaContaPagarDialog
     dataVencimento: ""
   });
   const { toast } = useToast();
+  const { profile } = useProfile();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    const hoje = new Date();
-    const vencimento = new Date(formData.dataVencimento);
-    let status = "aberto";
-    
-    if (vencimento < hoje) {
-      status = "vencido";
+    if (!profile?.company_id) {
+      toast({
+        title: "Erro",
+        description: "Company ID não encontrado.",
+        variant: "destructive",
+      });
+      return;
     }
 
-    const novaConta = {
-      id: Date.now(),
-      fornecedor: formData.fornecedor,
-      descricao: formData.descricao,
-      categoria: formData.categoria,
-      valorPrevisto: parseFloat(formData.valorPrevisto),
-      dataVencimento: formData.dataVencimento,
-      status,
-      recorrencia: formData.recorrencia,
-      periodoRecorrencia: formData.recorrencia === "sim" ? formData.periodoRecorrencia : null
-    };
+    setLoading(true);
 
-    onContaAdicionada(novaConta);
-    
-    toast({
-      title: "Conta adicionada!",
-      description: `Conta de ${formData.fornecedor} foi criada com sucesso.`,
-    });
+    try {
+      const hoje = new Date();
+      const vencimento = new Date(formData.dataVencimento);
+      let status: 'open' | 'paid' | 'overdue' = "open";
+      
+      if (vencimento < hoje) {
+        status = "overdue";
+      }
 
-    // Reset form
-    setFormData({
-      fornecedor: "",
-      descricao: "",
-      categoria: "",
-      valorPrevisto: "",
-      recorrencia: "nao",
-      periodoRecorrencia: "",
-      dataVencimento: ""
-    });
-    
-    setOpen(false);
+      // Cria a conta a pagar no banco
+      const { data: conta, error } = await supabase
+        .from('accounts_payable')
+        .insert({
+          company_id: profile.company_id,
+          supplier_name: formData.fornecedor,
+          description: formData.descricao,
+          category: formData.categoria,
+          amount: parseFloat(formData.valorPrevisto),
+          due_date: formData.dataVencimento,
+          status,
+          created_by: profile.id
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      toast({
+        title: "Conta adicionada!",
+        description: `Conta de ${formData.fornecedor} foi criada com sucesso e aparecerá no calendário.`,
+      });
+
+      onContaAdicionada();
+      
+      // Reset form
+      setFormData({
+        fornecedor: "",
+        descricao: "",
+        categoria: "",
+        valorPrevisto: "",
+        recorrencia: "nao",
+        periodoRecorrencia: "",
+        dataVencimento: ""
+      });
+      
+      setOpen(false);
+    } catch (error) {
+      console.error('Erro ao criar conta:', error);
+      toast({
+        title: "Erro ao criar conta",
+        description: "Não foi possível criar a conta a pagar.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -200,7 +233,9 @@ export function NovaContaPagarDialog({ onContaAdicionada }: NovaContaPagarDialog
             <Button type="button" variant="outline" onClick={() => setOpen(false)}>
               Cancelar
             </Button>
-            <Button type="submit">Salvar Conta</Button>
+            <Button type="submit" disabled={loading}>
+              {loading ? "Salvando..." : "Salvar Conta"}
+            </Button>
           </DialogFooter>
         </form>
       </DialogContent>

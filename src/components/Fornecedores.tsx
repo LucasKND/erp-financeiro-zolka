@@ -9,6 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { NovoFornecedorDialog } from "./NovoFornecedorDialog";
 import { ConfirmDeleteDialog } from "./ConfirmDeleteDialog";
+import { ContasPagarFornecedorDialog } from "./ContasPagarFornecedorDialog";
 
 const fornecedoresIniciais = [
   {
@@ -60,6 +61,8 @@ export function Fornecedores() {
   const [fornecedorToDelete, setFornecedorToDelete] = useState<any>(null);
   const [fornecedorParaEdicao, setFornecedorParaEdicao] = useState<any>(null);
   const [modoEdicao, setModoEdicao] = useState(false);
+  const [contasPagarDialogOpen, setContasPagarDialogOpen] = useState(false);
+  const [fornecedorSelecionado, setFornecedorSelecionado] = useState<string>("");
 
   const adicionarFornecedor = (novoFornecedor: any) => {
     if (modoEdicao && novoFornecedor.id) {
@@ -106,13 +109,8 @@ export function Fornecedores() {
   const visualizarContas = (id: number) => {
     const fornecedor = fornecedores.find(f => f.id === id);
     if (fornecedor) {
-      // TODO: Implementar navegação para tela de contas a pagar filtrada por fornecedor
-      // Por enquanto, mostrar informação simples
-      if (fornecedor.contasAbertas > 0) {
-        alert(`${fornecedor.nome} possui ${fornecedor.contasAbertas} conta(s) em aberto no valor total de ${formatCurrency(fornecedor.valorTotal)}.`);
-      } else {
-        alert(`${fornecedor.nome} não possui contas em aberto no momento.`);
-      }
+      setFornecedorSelecionado(fornecedor.nome);
+      setContasPagarDialogOpen(true);
     }
   };
 
@@ -328,6 +326,15 @@ export function Fornecedores() {
         title="Confirmar exclusão"
         description="Esta ação não pode ser desfeita. Todos os dados relacionados ao fornecedor serão permanentemente removidos."
         itemName={fornecedorToDelete?.nome}
+      />
+
+      <ContasPagarFornecedorDialog
+        open={contasPagarDialogOpen}
+        onOpenChange={setContasPagarDialogOpen}
+        fornecedorNome={fornecedorSelecionado}
+        onContasChanged={() => {
+          // Aqui podemos recarregar dados se necessário
+        }}
       />
     </div>
   );

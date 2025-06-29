@@ -1,78 +1,181 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, Filter, Download, TrendingUp, TrendingDown } from "lucide-react";
+import { Plus, Search, Filter, Download, TrendingUp, TrendingDown, Check, X } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { supabase } from "@/integrations/supabase/client";
+import { useProfile } from "@/hooks/useProfile";
+import { formatDate, formatCurrency } from "@/lib/dateUtils";
+import { useToast } from "@/hooks/use-toast";
 
-const transacoes = [
-  {
-    id: 1,
-    data: "2024-01-15",
-    descricao: "Pagamento - Fornecedor ABC",
-    categoria: "Material de Escritório",
-    conta: "Banco do Brasil",
-    tipo: "saida",
-    valor: 850.00,
-    saldo: 88490.00
-  },
-  {
-    id: 2,
-    data: "2024-01-14",
-    descricao: "Recebimento - João Silva",
-    categoria: "Venda de Produto",
-    conta: "Banco do Brasil",
-    tipo: "entrada",
-    valor: 2500.00,
-    saldo: 89340.00
-  },
-  {
-    id: 3,
-    data: "2024-01-13",
-    descricao: "Pagamento - Energia Elétrica SA",
-    categoria: "Utilidades",
-    conta: "Banco do Brasil",
-    tipo: "saida",
-    valor: 1200.00,
-    saldo: 86840.00
-  },
-  {
-    id: 4,
-    data: "2024-01-12",
-    descricao: "Recebimento - Maria Santos",
-    categoria: "Serviço de Consultoria",
-    conta: "Banco do Brasil",
-    tipo: "entrada",
-    valor: 1800.00,
-    saldo: 88040.00
-  },
-];
+interface Transaction {
+  id: string;
+  type: 'entrada' | 'saida';
+  description: string;
+  amount: number;
+  date: string;
+  status: 'realizada' | 'previsao';
+  category: string;
+  source: 'pagar' | 'receber';
+  originalId: string;
+}
+
+interface AccountsData {
+  contasPagar: any[];
+  contasReceber: any[];
+}
 
 export function FluxoCaixa() {
   const [searchTerm, setSearchTerm] = useState("");
+  const [accountsData, setAccountsData] = useState<AccountsData>({
+    contasPagar: [],
+    contasReceber: []
+  });
+  const [loading, setLoading] = useState(true);
+  const { company } = useProfile();
+  const { toast } = useToast();
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL'
-    }).format(value);
+  // Função para buscar contas do banco de dados
+  const fetchAccountsData = async () => {
+    if (!company?.id) return;
+
+    try {
+      setLoading(true);
+      
+      // Buscar contas a pagar
+      const { data: contasPagar, error: errorPagar } = await supabase
+        .from('accounts_payable')
+        .select('*')
+        .eq('company_id', company.id)
+        .order('due_date', { ascending: true });
+
+      if (errorPagar) throw errorPagar;
+
+      // Buscar contas a receber
+      const { data: contasReceber, error: errorReceber } = await supabase
+        .from('accounts_receivable')
+        .select('*')
+        .eq('company_id', company.id)
+        .order('due_date', { ascending: true });
+
+      if (errorReceber) throw errorReceber;
+
+      setAccountsData({
+        contasPagar: contasPagar || [],
+        contasReceber: contasReceber || []
+      });
+    } catch (error) {
+      console.error('Erro ao buscar dados das contas:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao carregar dados das contas",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('pt-BR');
+  useEffect(() => {
+    fetchAccountsData();
+  }, [company?.id]);
+
+  // Função para marcar conta como paga/recebida
+  const marcarComoRealizada = async (id: string, type: 'pagar' | 'receber') => {
+    const table = type === 'pagar' ? 'accounts_payable' : 'accounts_receivable';
+    const status = type === 'pagar' ? 'paid' : 'received';
+
+    try {
+      const { error } = await supabase
+        .from(table)
+        .update({ 
+          status: status,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Sucesso",
+        description: `Conta marcada como ${type === 'pagar' ? 'paga' : 'recebida'}`,
+      });
+
+      // Recarregar dados
+      fetchAccountsData();
+    } catch (error) {
+      console.error('Erro ao marcar conta:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao atualizar status da conta",
+        variant: "destructive",
+      });
+    }
   };
 
-  const totalEntradas = transacoes
-    .filter(t => t.tipo === "entrada")
-    .reduce((acc, t) => acc + t.valor, 0);
+  // Gerar transações a partir das contas
+  const generateTransactions = (): Transaction[] => {
+    const transactions: Transaction[] = [];
 
-  const totalSaidas = transacoes
-    .filter(t => t.tipo === "saida")
-    .reduce((acc, t) => acc + t.valor, 0);
+    // Processar contas a pagar
+    accountsData.contasPagar.forEach(conta => {
+      transactions.push({
+        id: `pagar_${conta.id}`,
+        type: 'saida',
+        description: conta.description,
+        amount: conta.amount,
+        date: conta.due_date,
+        status: conta.status === 'paid' ? 'realizada' : 'previsao',
+        category: conta.category,
+        source: 'pagar',
+        originalId: conta.id
+      });
+    });
 
-  const saldoLiquido = totalEntradas - totalSaidas;
+    // Processar contas a receber
+    accountsData.contasReceber.forEach(conta => {
+      transactions.push({
+        id: `receber_${conta.id}`,
+        type: 'entrada',
+        description: conta.description,
+        amount: conta.amount,
+        date: conta.due_date,
+        status: conta.status === 'received' ? 'realizada' : 'previsao',
+        category: 'Recebimento',
+        source: 'receber',
+        originalId: conta.id
+      });
+    });
+
+    return transactions.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  };
+
+  const transactions = generateTransactions();
+  const transacoesRealizadas = transactions.filter(t => t.status === 'realizada');
+  
+  // Cálculos de resumo
+  const totalEntradasRealizadas = transacoesRealizadas
+    .filter(t => t.type === 'entrada')
+    .reduce((acc, t) => acc + t.amount, 0);
+
+  const totalSaidasRealizadas = transacoesRealizadas
+    .filter(t => t.type === 'saida')
+    .reduce((acc, t) => acc + t.amount, 0);
+
+  const saldoAtual = totalEntradasRealizadas - totalSaidasRealizadas;
+
+  const totalAReceber = accountsData.contasReceber
+    .filter(c => c.status === 'open' || c.status === 'overdue')
+    .reduce((acc, c) => acc + c.amount, 0);
+
+  const totalAPagar = accountsData.contasPagar
+    .filter(c => c.status === 'open' || c.status === 'overdue')
+    .reduce((acc, c) => acc + c.amount, 0);
+
+  const saldoLiquido = saldoAtual + totalAReceber - totalAPagar;
 
   return (
     <div className="space-y-6">
@@ -100,10 +203,10 @@ export function FluxoCaixa() {
             <CardTitle className="text-sm font-medium text-muted-foreground">Saldo Atual</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-blue-600">
-              {formatCurrency(transacoes[0]?.saldo || 0)}
+            <div className={`text-2xl font-bold ${saldoAtual >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
+              {formatCurrency(saldoAtual)}
             </div>
-            <p className="text-xs text-muted-foreground">Banco do Brasil</p>
+            <p className="text-xs text-muted-foreground">Transações realizadas</p>
           </CardContent>
         </Card>
 
@@ -111,14 +214,14 @@ export function FluxoCaixa() {
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground flex items-center">
               <TrendingUp className="w-4 h-4 mr-1" />
-              Total Entradas
+              Total a Receber
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-green-600">
-              {formatCurrency(totalEntradas)}
+              {formatCurrency(totalAReceber)}
             </div>
-            <p className="text-xs text-muted-foreground">No período</p>
+            <p className="text-xs text-muted-foreground">Contas em aberto</p>
           </CardContent>
         </Card>
 
@@ -126,35 +229,35 @@ export function FluxoCaixa() {
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground flex items-center">
               <TrendingDown className="w-4 h-4 mr-1" />
-              Total Saídas
+              Total a Pagar
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-red-600">
-              {formatCurrency(totalSaidas)}
+              {formatCurrency(totalAPagar)}
             </div>
-            <p className="text-xs text-muted-foreground">No período</p>
+            <p className="text-xs text-muted-foreground">Contas em aberto</p>
           </CardContent>
         </Card>
 
         <Card className={`border-l-4 ${saldoLiquido >= 0 ? 'border-l-green-500' : 'border-l-red-500'}`}>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Saldo Líquido</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Saldo Líquido Projetado</CardTitle>
           </CardHeader>
           <CardContent>
             <div className={`text-2xl font-bold ${saldoLiquido >= 0 ? 'text-green-600' : 'text-red-600'}`}>
               {formatCurrency(saldoLiquido)}
             </div>
-            <p className="text-xs text-muted-foreground">Entradas - Saídas</p>
+            <p className="text-xs text-muted-foreground">Atual + A Receber - A Pagar</p>
           </CardContent>
         </Card>
       </div>
 
-      {/* Extrato de Transações */}
+      {/* Extrato de Transações Realizadas */}
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
-            <CardTitle>Extrato de Transações</CardTitle>
+            <CardTitle>Transações Realizadas</CardTitle>
             <div className="flex items-center space-x-2">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
@@ -179,35 +282,76 @@ export function FluxoCaixa() {
                 <TableHead>Data</TableHead>
                 <TableHead>Descrição</TableHead>
                 <TableHead>Categoria</TableHead>
-                <TableHead>Conta</TableHead>
                 <TableHead>Tipo</TableHead>
+                <TableHead>Status</TableHead>
                 <TableHead>Valor</TableHead>
-                <TableHead>Saldo</TableHead>
+                <TableHead>Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {transacoes.map((transacao) => (
-                <TableRow key={transacao.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
-                  <TableCell>{formatDate(transacao.data)}</TableCell>
-                  <TableCell className="font-medium">{transacao.descricao}</TableCell>
-                  <TableCell>
-                    <Badge variant="secondary">{transacao.categoria}</Badge>
+              {loading ? (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                    Carregando transações...
                   </TableCell>
-                  <TableCell>{transacao.conta}</TableCell>
-                  <TableCell>
-                    <Badge 
-                      variant={transacao.tipo === "entrada" ? "default" : "destructive"}
-                      className={transacao.tipo === "entrada" ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}
-                    >
-                      {transacao.tipo === "entrada" ? "Entrada" : "Saída"}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className={`font-semibold ${transacao.tipo === "entrada" ? "text-green-600" : "text-red-600"}`}>
-                    {transacao.tipo === "entrada" ? "+" : "-"}{formatCurrency(transacao.valor)}
-                  </TableCell>
-                  <TableCell className="font-medium">{formatCurrency(transacao.saldo)}</TableCell>
                 </TableRow>
-              ))}
+              ) : transactions.filter(transacao => 
+                  transacao.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                  transacao.category.toLowerCase().includes(searchTerm.toLowerCase())
+                ).length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                    Nenhuma transação encontrada.
+                  </TableCell>
+                </TableRow>
+              ) : (
+                transactions
+                  .filter(transacao => 
+                    transacao.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                    transacao.category.toLowerCase().includes(searchTerm.toLowerCase())
+                  )
+                  .map((transacao) => (
+                    <TableRow key={transacao.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
+                      <TableCell>{formatDate(transacao.date)}</TableCell>
+                      <TableCell className="font-medium">{transacao.description}</TableCell>
+                      <TableCell>
+                        <Badge variant="secondary">{transacao.category}</Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge 
+                          variant={transacao.type === "entrada" ? "default" : "destructive"}
+                          className={transacao.type === "entrada" ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100" : "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100"}
+                        >
+                          {transacao.type === "entrada" ? "Entrada" : "Saída"}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge 
+                          variant={transacao.status === "realizada" ? "default" : "outline"}
+                          className={transacao.status === "realizada" ? "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100" : ""}
+                        >
+                          {transacao.status === "realizada" ? "Realizada" : "Previsão"}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className={`font-semibold ${transacao.type === "entrada" ? "text-green-600" : "text-red-600"}`}>
+                        {transacao.type === "entrada" ? "+" : "-"}{formatCurrency(transacao.amount)}
+                      </TableCell>
+                      <TableCell>
+                        {transacao.status === "previsao" && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-8 px-2"
+                            onClick={() => marcarComoRealizada(transacao.originalId, transacao.source)}
+                          >
+                            <Check className="w-3 h-3 mr-1" />
+                            Marcar como {transacao.type === "entrada" ? "Recebida" : "Paga"}
+                          </Button>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))
+              )}
             </TableBody>
           </Table>
         </CardContent>

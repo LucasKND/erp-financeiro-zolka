@@ -24,6 +24,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useProfile } from "@/hooks/useProfile";
 import { useAuth } from "@/hooks/useAuth";
+import { usePermissions } from "@/hooks/usePermissions";
 
 interface SecureContaReceberDialogProps {
   onContaAdicionada: () => void;
@@ -43,6 +44,12 @@ export function SecureContaReceberDialog({ onContaAdicionada }: SecureContaReceb
   const { toast } = useToast();
   const { profile } = useProfile();
   const { user } = useAuth();
+  const { canCreate } = usePermissions();
+
+  // Se o usuário não pode criar, não mostrar o botão
+  if (!canCreate) {
+    return null;
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

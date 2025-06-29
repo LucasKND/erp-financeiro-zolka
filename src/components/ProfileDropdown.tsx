@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
+import { usePermissions } from "@/hooks/usePermissions";
 
 interface ProfileDropdownProps {
   setActiveModule: (module: string) => void;
@@ -18,7 +19,8 @@ interface ProfileDropdownProps {
 
 export function ProfileDropdown({ setActiveModule }: ProfileDropdownProps) {
   const { user, signOut } = useAuth();
-  const { profile } = useProfile();
+  const { profile, company } = useProfile();
+  const { userRole } = usePermissions();
 
   // Extract first name from various sources
   const getFirstName = () => {
@@ -56,6 +58,12 @@ export function ProfileDropdown({ setActiveModule }: ProfileDropdownProps) {
     return user?.email || "Usuário";
   };
 
+  const getRoleLabel = () => {
+    if (userRole?.role === 'financeiro') return 'Financeiro';
+    if (userRole?.role === 'proprietario') return 'Proprietário';
+    return 'Usuário';
+  };
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -65,7 +73,7 @@ export function ProfileDropdown({ setActiveModule }: ProfileDropdownProps) {
               {getFirstName()}
             </div>
             <div className="text-xs text-gray-500 dark:text-gray-400">
-              Administrador
+              {getRoleLabel()}
             </div>
           </div>
           <Avatar className="w-8 h-8">
@@ -88,6 +96,9 @@ export function ProfileDropdown({ setActiveModule }: ProfileDropdownProps) {
             <p className="text-sm font-medium leading-none">{getDisplayName()}</p>
             <p className="text-xs leading-none text-muted-foreground">
               {user?.email}
+            </p>
+            <p className="text-xs leading-none text-blue-600 font-medium">
+              {getRoleLabel()} • {company?.name || '2GO Marketing'}
             </p>
           </div>
         </div>

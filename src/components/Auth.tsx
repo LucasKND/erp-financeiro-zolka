@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,29 +7,28 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { SignUp } from "./SignUp";
-
 export function Auth() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [showSignUp, setShowSignUp] = useState(false);
-  const { toast } = useToast();
+  const {
+    toast
+  } = useToast();
   const [loginData, setLoginData] = useState({
     email: "",
     password: ""
   });
-
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError(null);
-
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
+      const {
+        data,
+        error
+      } = await supabase.auth.signInWithPassword({
         email: loginData.email,
         password: loginData.password
       });
-
       if (error) {
         if (error.message.includes('Invalid login credentials')) {
           setError('Email ou senha incorretos. Verifique suas credenciais.');
@@ -41,7 +39,6 @@ export function Auth() {
         }
         return;
       }
-
       if (data.user) {
         toast({
           title: "Login realizado com sucesso!",
@@ -55,21 +52,11 @@ export function Auth() {
       setIsLoading(false);
     }
   };
-
-  if (showSignUp) {
-    return <SignUp onBackToLogin={() => setShowSignUp(false)} />;
-  }
-
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-white p-4">
+  return <div className="min-h-screen flex items-center justify-center bg-white p-4">
       <Card className="w-full max-w-md border-gray-700 bg-[#0f0f0f]">
         <CardHeader className="text-center">
           <div className="flex items-center justify-center gap-3 mb-4">
-            <img 
-              src="/lovable-uploads/52673621-85bc-477d-80da-681dbd853793.png" 
-              alt="ZOLKA Logo" 
-              className="h-12 w-auto" 
-            />
+            <img src="/lovable-uploads/52673621-85bc-477d-80da-681dbd853793.png" alt="ZOLKA Logo" className="h-12 w-auto" />
             <CardTitle className="text-2xl font-bold text-yellow-500">ZOLKA ERP</CardTitle>
           </div>
           <CardDescription className="text-gray-300">
@@ -77,76 +64,33 @@ export function Auth() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {error && (
-            <Alert variant="destructive" className="mb-4">
+          {error && <Alert variant="destructive" className="mb-4 px-0 py-0 my-0 mx-0">
               <AlertDescription>{error}</AlertDescription>
-            </Alert>
-          )}
+            </Alert>}
 
           <form onSubmit={handleLogin} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="login-email" className="text-yellow-500">Email</Label>
-              <Input
-                id="login-email"
-                type="email"
-                placeholder="seu@email.com"
-                value={loginData.email}
-                onChange={(e) => setLoginData(prev => ({
-                  ...prev,
-                  email: e.target.value
-                }))}
-                required
-                disabled={isLoading}
-                className="border-gray-600 text-white placeholder-gray-400 bg-slate-50"
-              />
+              <Label htmlFor="login-email" className="text-yellow-500">ERP</Label>
+              <Input id="login-email" type="email" placeholder="seu@email.com" value={loginData.email} onChange={e => setLoginData(prev => ({
+              ...prev,
+              email: e.target.value
+            }))} required disabled={isLoading} className="border-gray-600 text-white placeholder-gray-400 bg-slate-50" />
             </div>
-
             <div className="space-y-2">
               <Label htmlFor="login-password" className="text-yellow-500">Senha</Label>
-              <Input
-                id="login-password"
-                type="password"
-                placeholder="Sua senha"
-                value={loginData.password}
-                onChange={(e) => setLoginData(prev => ({
-                  ...prev,
-                  password: e.target.value
-                }))}
-                required
-                disabled={isLoading}
-                className="border-gray-600 text-white placeholder-gray-400 bg-slate-50"
-              />
+              <Input id="login-password" type="password" placeholder="Sua senha" value={loginData.password} onChange={e => setLoginData(prev => ({
+              ...prev,
+              password: e.target.value
+            }))} required disabled={isLoading} className="border-gray-600 text-white placeholder-gray-400 bg-slate-50" />
             </div>
-
-            <Button 
-              type="submit" 
-              className="w-full bg-yellow-500 hover:bg-yellow-600 text-black font-semibold"
-              disabled={isLoading}
-            >
-              {isLoading ? (
-                <>
+            <Button type="submit" className="w-full bg-yellow-500 hover:bg-yellow-600 text-black font-semibold" disabled={isLoading}>
+              {isLoading ? <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Entrando...
-                </>
-              ) : (
-                "Entrar"
-              )}
+                </> : "Entrar"}
             </Button>
           </form>
-
-          <div className="mt-4 text-center">
-            <p className="text-sm text-gray-400">
-              Não tem uma conta?{" "}
-              <button
-                onClick={() => setShowSignUp(true)}
-                className="text-yellow-500 hover:text-yellow-400 underline"
-              >
-                Criar conta
-              </button>
-            </p>
-          </div>
         </CardContent>
       </Card>
-    </div>
-  );
+    </div>;
 }

@@ -16,16 +16,40 @@ export function TopBar({ setActiveModule }: TopBarProps) {
   const { user, signOut } = useAuth();
   const { profile } = useProfile();
 
-  // Extract first name from full_name or fallback to email prefix
+  // Extract first name from various sources
   const getFirstName = () => {
+    // Try to get from user metadata first
+    if (user?.user_metadata?.full_name) {
+      return user.user_metadata.full_name.split(' ')[0];
+    }
+    if (user?.user_metadata?.name) {
+      return user.user_metadata.name.split(' ')[0];
+    }
+    // Then try profile
     if (profile?.full_name) {
       return profile.full_name.split(' ')[0];
     }
-    return user?.email?.split('@')[0] || "Usuário";
+    // Finally fallback to email prefix
+    if (user?.email) {
+      return user.email.split('@')[0];
+    }
+    return "Usuário";
   };
 
   const getDisplayName = () => {
-    return profile?.full_name || user?.email || "Usuário";
+    // Try to get from user metadata first
+    if (user?.user_metadata?.full_name) {
+      return user.user_metadata.full_name;
+    }
+    if (user?.user_metadata?.name) {
+      return user.user_metadata.name;
+    }
+    // Then try profile
+    if (profile?.full_name) {
+      return profile.full_name;
+    }
+    // Finally fallback to email
+    return user?.email || "Usuário";
   };
 
   return (
@@ -49,7 +73,7 @@ export function TopBar({ setActiveModule }: TopBarProps) {
         <div className="flex items-center space-x-3">
           <div className="text-right">
             <div className="text-sm font-medium text-gray-700 dark:text-gray-200">
-              {getDisplayName()}
+              {getFirstName()}
             </div>
             <div className="text-xs text-gray-500 dark:text-gray-400">
               Administrador

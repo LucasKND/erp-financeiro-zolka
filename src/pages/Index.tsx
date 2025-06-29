@@ -14,10 +14,12 @@ import { Relatorios } from "@/components/Relatorios";
 import { Configuracoes } from "@/components/Configuracoes";
 import { Auth } from "@/components/Auth";
 import { useAuth } from "@/hooks/useAuth";
+import { useProfile } from "@/hooks/useProfile";
 
 const Index = () => {
   const [activeModule, setActiveModule] = useState("dashboard");
   const { user, loading: authLoading } = useAuth();
+  const { profile, company, loading: profileLoading } = useProfile();
 
   // Show loading while checking authentication
   if (authLoading) {
@@ -36,6 +38,40 @@ const Index = () => {
   // Show auth page if not authenticated
   if (!user) {
     return <Auth />;
+  }
+
+  // Show loading while setting up profile
+  if (profileLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="w-12 h-12 bg-gradient-to-r from-yellow-500 to-yellow-600 rounded-lg flex items-center justify-center mx-auto mb-4 animate-pulse">
+            <span className="text-white font-bold text-lg">Z</span>
+          </div>
+          <div className="text-lg text-gray-600">Configurando seu perfil...</div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error if profile creation failed
+  if (!profile) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="w-12 h-12 bg-red-500 rounded-lg flex items-center justify-center mx-auto mb-4">
+            <span className="text-white font-bold text-lg">!</span>
+          </div>
+          <div className="text-lg text-gray-600 mb-4">Erro ao carregar perfil</div>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+          >
+            Tentar Novamente
+          </button>
+        </div>
+      </div>
+    );
   }
 
   const renderActiveModule = () => {

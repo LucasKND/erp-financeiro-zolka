@@ -1,112 +1,121 @@
 
 import { useState, useEffect } from 'react';
-import { useAuth } from './useAuth';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from './useAuth';
 import type { Tables } from '@/integrations/supabase/types';
 
 type Profile = Tables<'profiles'>;
 type Company = Tables<'companies'>;
-type UserRole = Tables<'user_roles'>;
 
-interface ProfileData {
-  profile: Profile | null;
-  company: Company | null;
-  userRole: UserRole | null;
-  loading: boolean;
-  needsCompanySetup: boolean;
-  refreshProfile: () => Promise<void>;
-}
-
-export const useProfile = (): ProfileData => {
-  const { user, loading: authLoading } = useAuth();
+export function useProfile() {
+  const { user } = useAuth();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [company, setCompany] = useState<Company | null>(null);
-  const [userRole, setUserRole] = useState<UserRole | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const fetchProfile = async () => {
+  useEffect(() => {
     if (!user) {
+      console.log('No user found, clearing profile');
       setProfile(null);
       setCompany(null);
-      setUserRole(null);
       setLoading(false);
       return;
     }
 
-    try {
-      setLoading(true);
-      console.log('Fetching profile for user:', user.id);
+    const fetchProfile = async () => {
+      try {
+        console.log('Fetching profile for user:', user.id);
+        
+        // Buscar perfil existente
+        let { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single();
 
-      // Fetch user profile - use maybeSingle() to avoid errors when no profile exists
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user.id)
-        .maybeSingle();
-
-      if (profileError) {
-        console.error('Error fetching profile:', profileError);
-        // If no profile exists, we'll create one
-        if (profileError.code === 'PGRST116') {
-          console.log('No profile found, user needs to set up company');
-          setProfile(null);
-          setCompany(null);
-          setUserRole(null);
-          setLoading(false);
-          return;
+        if (profileError && profileError.code !== 'PGRST116') {
+          throw profileError;
         }
-        throw profileError;
-      }
 
-      console.log('Profile data:', profileData);
-      setProfile(profileData);
+        // Se não existe perfil, criar um
+        if (!profileData) {
+          console.log('Profile not found, creating new profile');
+          
+          // Primeiro, encontrar ou criar empresa padrão
+          let { data: companyData, error: companyError } = await supabase
+            .from('companies')
+            .select('*')
+            .eq('name', '2GO Marketing')
+            .single();
 
-      // If profile has company_id, fetch company and role
-      if (profileData?.company_id) {
-        const [companyResult, roleResult] = await Promise.all([
-          supabase
+          if (companyError && companyError.code === 'PGRST116') {
+            // Empresa não existe, criar uma nova
+            const { data: newCompany, error: createCompanyError } = await supabase
+              .from('companies')
+              .insert({ name: '2GO Marketing' })
+              .select()
+              .single();
+
+            if (createCompanyError) throw createCompanyError;
+            companyData = newCompany;
+          } else if (companyError) {
+            throw companyError;
+          }
+
+          // Criar perfil do usuário
+          const { data: newProfile, error: createProfileError } = await supabase
+            .from('profiles')
+            .insert({
+              id: user.id,
+              company_id: companyData!.id,
+              full_name: user.user_metadata?.full_name || user.user_metadata?.name || user.email,
+              email: user.email
+            })
+            .select()
+            .single();
+
+          if (createProfileError) throw createProfileError;
+          profileData = newProfile;
+
+          // Criar role financeiro para o novo usuário
+          const { error: roleError } = await supabase
+            .from('user_roles')
+            .insert({
+              user_id: user.id,
+              company_id: companyData!.id,
+              role: 'financeiro'
+            });
+
+          if (roleError) {
+            console.error('Error creating user role:', roleError);
+            // Não vamos falhar se o role já existir
+          }
+        }
+
+        console.log('Profile data:', profileData);
+        setProfile(profileData);
+
+        // Buscar dados da empresa
+        if (profileData?.company_id) {
+          const { data: companyData, error: companyError } = await supabase
             .from('companies')
             .select('*')
             .eq('id', profileData.company_id)
-            .maybeSingle(),
-          supabase
-            .from('user_roles')
-            .select('*')
-            .eq('user_id', user.id)
-            .eq('company_id', profileData.company_id)
-            .maybeSingle()
-        ]);
+            .single();
 
-        if (companyResult.data) {
-          console.log('Company data:', companyResult.data);
-          setCompany(companyResult.data);
+          if (companyError) throw companyError;
+          setCompany(companyData);
         }
-        if (roleResult.data) {
-          console.log('Role data:', roleResult.data);
-          setUserRole(roleResult.data);
-        }
+
+      } catch (error) {
+        console.error('Error in fetchProfile:', error);
+      } finally {
+        setLoading(false);
       }
-    } catch (error) {
-      console.error('Error fetching profile:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+    };
 
-  useEffect(() => {
-    if (!authLoading) {
-      fetchProfile();
-    }
-  }, [user, authLoading]);
+    fetchProfile();
+  }, [user]);
 
-  const needsCompanySetup = !loading && user && (!profile || !profile.company_id);
-
-  return {
-    profile,
-    company,
-    userRole,
-    loading: loading || authLoading,
-    needsCompanySetup,
-    refreshProfile: fetchProfile,
-  };
-};
+  return { profile, company, loading };
+}

@@ -27,88 +27,74 @@ export function useProfile() {
         console.log('Fetching profile for user:', user.id);
         
         // Buscar perfil existente
-        let { data: profileData, error: profileError } = await supabase
+        const { data: profileData, error: profileError } = await supabase
           .from('profiles')
           .select('*')
           .eq('id', user.id)
-          .single();
+          .maybeSingle();
 
         if (profileError && profileError.code !== 'PGRST116') {
+          console.error('Error fetching profile:', profileError);
           throw profileError;
         }
 
-        // Se não existe perfil, criar um
+        // Se não existe perfil, aguardar um momento e tentar novamente
+        // O trigger pode estar criando o perfil automaticamente
         if (!profileData) {
-          console.log('Profile not found, creating new profile');
+          console.log('Profile not found, waiting for trigger to create it...');
+          await new Promise(resolve => setTimeout(resolve, 2000));
           
-          // Primeiro, encontrar ou criar empresa padrão
-          let { data: companyData, error: companyError } = await supabase
-            .from('companies')
-            .select('*')
-            .eq('name', '2GO Marketing')
-            .single();
-
-          if (companyError && companyError.code === 'PGRST116') {
-            // Empresa não existe, criar uma nova
-            const { data: newCompany, error: createCompanyError } = await supabase
-              .from('companies')
-              .insert({ name: '2GO Marketing' })
-              .select()
-              .single();
-
-            if (createCompanyError) throw createCompanyError;
-            companyData = newCompany;
-          } else if (companyError) {
-            throw companyError;
-          }
-
-          // Criar perfil do usuário
-          const { data: newProfile, error: createProfileError } = await supabase
+          const { data: retryProfile, error: retryError } = await supabase
             .from('profiles')
-            .insert({
-              id: user.id,
-              company_id: companyData!.id,
-              full_name: user.user_metadata?.full_name || user.user_metadata?.name || user.email,
-              email: user.email
-            })
-            .select()
-            .single();
+            .select('*')
+            .eq('id', user.id)
+            .maybeSingle();
 
-          if (createProfileError) throw createProfileError;
-          profileData = newProfile;
-
-          // Criar role financeiro para o novo usuário
-          const { error: roleError } = await supabase
-            .from('user_roles')
-            .insert({
-              user_id: user.id,
-              company_id: companyData!.id,
-              role: 'financeiro'
-            });
-
-          if (roleError) {
-            console.error('Error creating user role:', roleError);
-            // Não vamos falhar se o role já existir
+          if (retryError && retryError.code !== 'PGRST116') {
+            throw retryError;
           }
+
+          if (retryProfile) {
+            setProfile(retryProfile);
+            console.log('Profile found after retry:', retryProfile);
+          } else {
+            console.log('Profile still not found, user needs to set up company');
+            setProfile(null);
+            setLoading(false);
+            return;
+          }
+        } else {
+          console.log('Profile found:', profileData);
+          setProfile(profileData);
         }
 
-        console.log('Profile data:', profileData);
-        setProfile(profileData);
+        // Buscar dados da empresa se o perfil tem company_id
+        const finalProfile = profileData || (await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single()).data;
 
-        // Buscar dados da empresa
-        if (profileData?.company_id) {
+        if (finalProfile?.company_id) {
           const { data: companyData, error: companyError } = await supabase
             .from('companies')
             .select('*')
-            .eq('id', profileData.company_id)
-            .single();
+            .eq('id', finalProfile.company_id)
+            .maybeSingle();
 
-          if (companyError) throw companyError;
-          setCompany(companyData);
+          if (companyError) {
+            console.error('Error fetching company:', companyError);
+          } else {
+            console.log('Company found:', companyData);
+            setCompany(companyData);
+          }
         }
 
       } catch (error) {
         console.error('Error in fetchProfile:', error);
+        // Em caso de erro, ainda configurar como não carregando
+        setProfile(null);
+        setCompany(null);
       } finally {
         setLoading(false);
       }

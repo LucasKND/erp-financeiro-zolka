@@ -260,6 +260,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: boolean
       }
+      user_can_access_company: {
+        Args: { company_uuid: string }
+        Returns: boolean
+      }
     }
     Enums: {
       user_role: "financeiro" | "proprietario"

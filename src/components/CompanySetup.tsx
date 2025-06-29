@@ -13,7 +13,7 @@ interface CompanySetupProps {
 }
 
 export function CompanySetup({ onSetupComplete }: CompanySetupProps) {
-  const [companyName, setCompanyName] = useState("");
+  const [companyName, setCompanyName] = useState("2GO Marketing");
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
@@ -26,60 +26,86 @@ export function CompanySetup({ onSetupComplete }: CompanySetupProps) {
     try {
       console.log('Setting up company for user:', user.id);
       
-      // First, ensure user profile exists
+      // Verificar se já existe uma empresa com esse nome
+      let { data: existingCompany } = await supabase
+        .from('companies')
+        .select('*')
+        .eq('name', companyName)
+        .maybeSingle();
+
+      let companyId;
+      
+      if (existingCompany) {
+        companyId = existingCompany.id;
+        console.log('Using existing company:', existingCompany);
+      } else {
+        // Criar nova empresa
+        const { data: newCompany, error: companyError } = await supabase
+          .from('companies')
+          .insert([{ name: companyName }])
+          .select()
+          .single();
+
+        if (companyError) {
+          console.error('Error creating company:', companyError);
+          throw companyError;
+        }
+        
+        companyId = newCompany.id;
+        console.log('Company created:', newCompany);
+      }
+
+      // Verificar se perfil já existe
       const { data: existingProfile } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', user.id)
         .maybeSingle();
 
-      console.log('Existing profile:', existingProfile);
-
-      // Create company
-      const { data: company, error: companyError } = await supabase
-        .from('companies')
-        .insert([{ name: companyName }])
-        .select()
-        .single();
-
-      if (companyError) throw companyError;
-      console.log('Company created:', company);
-
-      // Create or update user profile with company_id
       if (existingProfile) {
-        const { error: profileError } = await supabase
+        // Atualizar perfil existente
+        const { error: updateError } = await supabase
           .from('profiles')
-          .update({ company_id: company.id })
+          .update({ company_id: companyId })
           .eq('id', user.id);
 
-        if (profileError) throw profileError;
+        if (updateError) {
+          console.error('Error updating profile:', updateError);
+          throw updateError;
+        }
         console.log('Profile updated with company_id');
       } else {
-        // Create profile if it doesn't exist
+        // Criar novo perfil
         const { error: profileError } = await supabase
           .from('profiles')
           .insert([{
             id: user.id,
-            company_id: company.id,
+            company_id: companyId,
             full_name: user.user_metadata?.full_name || user.user_metadata?.name || '',
-            email: user.email
+            email: user.email || ''
           }]);
 
-        if (profileError) throw profileError;
-        console.log('Profile created with company_id');
+        if (profileError) {
+          console.error('Error creating profile:', profileError);
+          throw profileError;
+        }
+        console.log('Profile created');
       }
 
-      // Create financeiro role for the user
+      // Criar role financeiro
       const { error: roleError } = await supabase
         .from('user_roles')
         .insert([{
           user_id: user.id,
-          company_id: company.id,
+          company_id: companyId,
           role: 'financeiro'
         }]);
 
-      if (roleError) throw roleError;
-      console.log('Financeiro role created');
+      if (roleError && roleError.code !== '23505') { // Ignorar erro de duplicata
+        console.error('Error creating role:', roleError);
+        throw roleError;
+      }
+      console.log('Role created or already exists');
 
       toast({
         title: "Empresa configurada!",

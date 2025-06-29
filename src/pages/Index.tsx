@@ -13,6 +13,7 @@ import { CalendarioContas } from "@/components/CalendarioContas";
 import { Relatorios } from "@/components/Relatorios";
 import { Configuracoes } from "@/components/Configuracoes";
 import { Auth } from "@/components/Auth";
+import { CompanySetup } from "@/components/CompanySetup";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 
@@ -54,24 +55,9 @@ const Index = () => {
     );
   }
 
-  // Show error if profile creation failed
-  if (!profile) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <div className="w-12 h-12 bg-red-500 rounded-lg flex items-center justify-center mx-auto mb-4">
-            <span className="text-white font-bold text-lg">!</span>
-          </div>
-          <div className="text-lg text-gray-600 mb-4">Erro ao carregar perfil</div>
-          <button 
-            onClick={() => window.location.reload()} 
-            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-          >
-            Tentar Novamente
-          </button>
-        </div>
-      </div>
-    );
+  // Show company setup if profile doesn't exist or doesn't have a company
+  if (!profile || !profile.company_id) {
+    return <CompanySetup onSetupComplete={() => window.location.reload()} />;
   }
 
   const renderActiveModule = () => {

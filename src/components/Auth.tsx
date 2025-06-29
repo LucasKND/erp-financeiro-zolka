@@ -10,11 +10,7 @@ import { Loader2, Building2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
-interface AuthProps {
-  onAuthSuccess: () => void;
-}
-
-export function Auth({ onAuthSuccess }: AuthProps) {
+export function Auth() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
@@ -58,7 +54,6 @@ export function Auth({ onAuthSuccess }: AuthProps) {
           title: "Login realizado com sucesso!",
           description: "Bem-vindo ao Sistema ERP.",
         });
-        onAuthSuccess();
       }
     } catch (err) {
       setError('Erro inesperado. Tente novamente.');

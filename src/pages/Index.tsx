@@ -23,21 +23,7 @@ const Index = () => {
   const { user, loading: authLoading } = useAuth();
   const { profile, company, loading: profileLoading } = useProfile();
 
-  // Show loading while checking authentication
-  if (authLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <div className="w-12 h-12 bg-gradient-to-r from-yellow-500 to-yellow-600 rounded-lg flex items-center justify-center mx-auto mb-4 animate-pulse">
-            <span className="text-white font-bold text-lg">Z</span>
-          </div>
-          <div className="text-lg text-gray-600">Carregando Zolka ERP...</div>
-        </div>
-      </div>
-    );
-  }
-
-  // Show auth page if not authenticated
+  // Always show login screen first - no loading screens
   if (!user) {
     return <Auth />;
   }

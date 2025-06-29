@@ -1,6 +1,6 @@
 
 import { LayoutDashboard, TrendingUp, TrendingDown, Users, Building, Activity, Calendar, FileText, Settings } from "lucide-react";
-import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarTrigger, useSidebar } from "@/components/ui/sidebar";
+import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarTrigger, useSidebar } from "@/components/ui/sidebar";
 
 interface AppSidebarProps {
   activeModule: string;
@@ -64,6 +64,30 @@ export function AppSidebar({ activeModule, setActiveModule }: AppSidebarProps) {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
+
+      <SidebarFooter className="p-4 border-t">
+        <div className="flex items-center justify-center">
+          {isCollapsed ? (
+            <img 
+              src="/lovable-uploads/c41c9428-bce8-4d15-bc92-f2bf789c5576.png" 
+              alt="Zolka Logo" 
+              className="w-8 h-8 object-contain"
+            />
+          ) : (
+            <div className="flex items-center space-x-2">
+              <img 
+                src="/lovable-uploads/c41c9428-bce8-4d15-bc92-f2bf789c5576.png" 
+                alt="Zolka Logo" 
+                className="w-8 h-8 object-contain"
+              />
+              <div className="text-center">
+                <div className="text-sm font-semibold text-gray-800">Zolka</div>
+                <div className="text-xs text-gray-500">ERP System</div>
+              </div>
+            </div>
+          )}
+        </div>
+      </SidebarFooter>
     </Sidebar>
   );
 }

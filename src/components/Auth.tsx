@@ -61,7 +61,7 @@ export function Auth() {
             <img 
               src="/lovable-uploads/f145b6bd-8c26-4f1a-a832-5855b8d850d5.png" 
               alt="Zolka Logo" 
-              className="w-16 h-16 object-contain"
+              className="w-48 h-48 object-contain"
             />
           </div>
           <CardTitle className="text-2xl font-bold text-yellow-500">ZOLKA ERP</CardTitle>

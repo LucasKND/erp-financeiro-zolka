@@ -51,30 +51,89 @@ export function SignUp({ onBackToLogin }: SignUpProps) {
     }
 
     try {
-      console.log('Verificando se a empresa existe com código de acesso:', signUpData.companyName);
+      // Limpar e normalizar os dados de entrada
+      const cleanCompanyName = signUpData.companyName.trim();
+      const cleanAccessCode = signUpData.accessCode.trim();
 
-      // 1. Verificar se a empresa existe e o código de acesso está correto
-      const { data: company, error: companyError } = await supabase
+      console.log('=== DEBUG CADASTRO ===');
+      console.log('Nome da empresa digitado:', `"${cleanCompanyName}"`);
+      console.log('Código de acesso digitado:', `"${cleanAccessCode}"`);
+      console.log('Tamanho do nome da empresa:', cleanCompanyName.length);
+      console.log('Tamanho do código de acesso:', cleanAccessCode.length);
+
+      // 1. Primeiro, listar todas as empresas disponíveis para debug
+      console.log('Listando todas as empresas disponíveis...');
+      const { data: allCompanies, error: listError } = await supabase
         .from('companies')
-        .select('id, name, access_code')
-        .ilike('name', signUpData.companyName.trim())
-        .eq('access_code', signUpData.accessCode.trim())
-        .maybeSingle();
+        .select('id, name, access_code');
 
-      if (companyError) {
-        console.error('Erro ao buscar empresa:', companyError);
-        setError('Erro ao verificar empresa. Tente novamente.');
-        return;
+      if (listError) {
+        console.error('Erro ao listar empresas:', listError);
+      } else {
+        console.log('Empresas encontradas:', allCompanies);
+        allCompanies?.forEach((company, index) => {
+          console.log(`Empresa ${index + 1}:`);
+          console.log(`  Nome: "${company.name}" (tamanho: ${company.name?.length})`);
+          console.log(`  Código: "${company.access_code}" (tamanho: ${company.access_code?.length})`);
+        });
       }
 
+      // 2. Verificar se a empresa existe e o código de acesso está correto
+      console.log('Buscando empresa com critérios específicos...');
+      
+      // Primeira tentativa: busca case-sensitive exata
+      const { data: exactMatch, error: exactError } = await supabase
+        .from('companies')
+        .select('id, name, access_code')
+        .eq('name', cleanCompanyName)
+        .eq('access_code', cleanAccessCode)
+        .maybeSingle();
+
+      console.log('Resultado busca exata:', exactMatch);
+      if (exactError) console.log('Erro busca exata:', exactError);
+
+      // Segunda tentativa: busca case-insensitive
+      const { data: caseInsensitiveMatch, error: caseInsensitiveError } = await supabase
+        .from('companies')
+        .select('id, name, access_code')
+        .ilike('name', cleanCompanyName)
+        .ilike('access_code', cleanAccessCode)
+        .maybeSingle();
+
+      console.log('Resultado busca case-insensitive:', caseInsensitiveMatch);
+      if (caseInsensitiveError) console.log('Erro busca case-insensitive:', caseInsensitiveError);
+
+      // Usar o resultado que funcionou
+      let company = exactMatch || caseInsensitiveMatch;
+
       if (!company) {
-        setError('Empresa não encontrada ou código de acesso incorreto. Verifique os dados informados ou entre em contato com o administrador.');
+        console.log('=== EMPRESA NÃO ENCONTRADA ===');
+        console.log('Tentando busca apenas por nome...');
+        
+        const { data: nameOnlyMatch, error: nameOnlyError } = await supabase
+          .from('companies')
+          .select('id, name, access_code')
+          .ilike('name', cleanCompanyName)
+          .maybeSingle();
+
+        console.log('Empresa encontrada apenas por nome:', nameOnlyMatch);
+        if (nameOnlyError) console.log('Erro busca por nome:', nameOnlyError);
+
+        if (nameOnlyMatch) {
+          console.log('PROBLEMA: Empresa existe mas código de acesso está incorreto');
+          console.log(`Código esperado: "${nameOnlyMatch.access_code}"`);
+          console.log(`Código fornecido: "${cleanAccessCode}"`);
+          setError('Código de acesso incorreto. Verifique se digitou "ZOLKA2024" exatamente como mostrado.');
+        } else {
+          console.log('PROBLEMA: Empresa não existe no banco de dados');
+          setError('Empresa não encontrada. Verifique se digitou "2GO Marketing" exatamente como mostrado.');
+        }
         return;
       }
 
       console.log('Empresa encontrada:', company.name, 'ID:', company.id);
 
-      // 2. Criar usuário no Supabase Auth
+      // 3. Criar usuário no Supabase Auth
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: signUpData.email,
         password: signUpData.password,
@@ -106,7 +165,7 @@ export function SignUp({ onBackToLogin }: SignUpProps) {
 
       console.log('Usuário criado:', authData.user.id);
 
-      // 3. Criar perfil do usuário
+      // 4. Criar perfil do usuário
       const { error: profileError } = await supabase
         .from('profiles')
         .insert([{
@@ -134,7 +193,7 @@ export function SignUp({ onBackToLogin }: SignUpProps) {
         }
       }
 
-      // 4. Atribuir role financeiro
+      // 5. Atribuir role financeiro
       const { error: roleError } = await supabase
         .from('user_roles')
         .insert([{
@@ -241,7 +300,7 @@ export function SignUp({ onBackToLogin }: SignUpProps) {
               <Input
                 id="companyName"
                 type="text"
-                placeholder="Digite o nome exato da sua empresa"
+                placeholder="Digite: 2GO Marketing"
                 value={signUpData.companyName}
                 onChange={(e) => setSignUpData(prev => ({
                   ...prev,
@@ -252,7 +311,7 @@ export function SignUp({ onBackToLogin }: SignUpProps) {
                 className="border-gray-600 text-gray-900 placeholder-gray-400 bg-white"
               />
               <p className="text-xs text-gray-400">
-                Digite o nome exato da empresa cadastrada no sistema
+                Digite exatamente: <strong>2GO Marketing</strong>
               </p>
             </div>
 
@@ -261,7 +320,7 @@ export function SignUp({ onBackToLogin }: SignUpProps) {
               <Input
                 id="accessCode"
                 type="text"
-                placeholder="Código fornecido pela empresa"
+                placeholder="Digite: ZOLKA2024"
                 value={signUpData.accessCode}
                 onChange={(e) => setSignUpData(prev => ({
                   ...prev,
@@ -272,7 +331,7 @@ export function SignUp({ onBackToLogin }: SignUpProps) {
                 className="border-gray-600 text-gray-900 placeholder-gray-400 bg-white"
               />
               <p className="text-xs text-gray-400">
-                Digite o código de acesso fornecido pelo administrador da empresa
+                Digite exatamente: <strong>ZOLKA2024</strong>
               </p>
             </div>
 

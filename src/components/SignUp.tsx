@@ -22,7 +22,8 @@ export function SignUp({ onBackToLogin }: SignUpProps) {
     email: "",
     password: "",
     confirmPassword: "",
-    companyName: ""
+    companyName: "",
+    accessCode: ""
   });
 
   const handleSignUp = async (e: React.FormEvent) => {
@@ -43,20 +44,21 @@ export function SignUp({ onBackToLogin }: SignUpProps) {
       return;
     }
 
-    if (!signUpData.fullName.trim() || !signUpData.companyName.trim()) {
+    if (!signUpData.fullName.trim() || !signUpData.companyName.trim() || !signUpData.accessCode.trim()) {
       setError('Por favor, preencha todos os campos obrigatórios.');
       setIsLoading(false);
       return;
     }
 
     try {
-      console.log('Verificando se a empresa existe:', signUpData.companyName);
+      console.log('Verificando se a empresa existe com código de acesso:', signUpData.companyName);
 
-      // 1. Verificar se a empresa existe
+      // 1. Verificar se a empresa existe e o código de acesso está correto
       const { data: company, error: companyError } = await supabase
         .from('companies')
-        .select('id, name')
+        .select('id, name, access_code')
         .ilike('name', signUpData.companyName.trim())
+        .eq('access_code', signUpData.accessCode.trim())
         .maybeSingle();
 
       if (companyError) {
@@ -66,7 +68,7 @@ export function SignUp({ onBackToLogin }: SignUpProps) {
       }
 
       if (!company) {
-        setError('Empresa não encontrada. Verifique o nome da empresa ou entre em contato com o administrador.');
+        setError('Empresa não encontrada ou código de acesso incorreto. Verifique os dados informados ou entre em contato com o administrador.');
         return;
       }
 
@@ -255,6 +257,26 @@ export function SignUp({ onBackToLogin }: SignUpProps) {
             </div>
 
             <div className="space-y-2">
+              <Label htmlFor="accessCode" className="text-yellow-500">Código de Acesso da Empresa *</Label>
+              <Input
+                id="accessCode"
+                type="text"
+                placeholder="Código fornecido pela empresa"
+                value={signUpData.accessCode}
+                onChange={(e) => setSignUpData(prev => ({
+                  ...prev,
+                  accessCode: e.target.value
+                }))}
+                required
+                disabled={isLoading}
+                className="border-gray-600 text-white placeholder-gray-400 bg-slate-50"
+              />
+              <p className="text-xs text-gray-400">
+                Digite o código de acesso fornecido pelo administrador da empresa
+              </p>
+            </div>
+
+            <div className="space-y-2">
               <Label htmlFor="password" className="text-yellow-500">Senha *</Label>
               <Input
                 id="password"
@@ -315,7 +337,7 @@ export function SignUp({ onBackToLogin }: SignUpProps) {
               </button>
             </p>
             <p className="text-xs text-gray-500 mt-2">
-              Se sua empresa não está cadastrada, entre em contato com o administrador do sistema.
+              Se sua empresa não está cadastrada ou você não possui o código de acesso, entre em contato com o administrador do sistema.
             </p>
           </div>
         </CardContent>

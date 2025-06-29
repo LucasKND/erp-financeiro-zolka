@@ -81,7 +81,7 @@ export function Auth() {
               <Building2 className="w-8 h-8 text-white" />
             </div>
           </div>
-          <CardTitle className="text-2xl font-bold text-gray-800">Sistema ERP</CardTitle>
+          <CardTitle className="text-2xl font-bold text-gray-800">ZOLKA ERP</CardTitle>
           <CardDescription>
             Gestão financeira empresarial completa
           </CardDescription>

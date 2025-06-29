@@ -56,7 +56,7 @@ export function SignUp({ onBackToLogin }: SignUpProps) {
       const cleanAccessCode = signUpData.accessCode.trim();
 
       // Verify company exists and access code is correct
-      const { data: company, error: companyError } = await supabase
+      let { data: company, error: companyError } = await supabase
         .from('companies')
         .select('id, name, access_code')
         .eq('name', cleanCompanyName)
@@ -64,7 +64,6 @@ export function SignUp({ onBackToLogin }: SignUpProps) {
         .maybeSingle();
 
       if (companyError) {
-        console.error('Database error during company lookup');
         setError('Erro interno. Tente novamente mais tarde.');
         return;
       }
@@ -79,7 +78,6 @@ export function SignUp({ onBackToLogin }: SignUpProps) {
           .maybeSingle();
 
         if (fallbackError) {
-          console.error('Database error during fallback company lookup');
           setError('Erro interno. Tente novamente mais tarde.');
           return;
         }
@@ -118,7 +116,6 @@ export function SignUp({ onBackToLogin }: SignUpProps) {
       });
 
       if (authError) {
-        console.error('Authentication error during signup');
         if (authError.message.includes('User already registered')) {
           setError('Este email já está cadastrado. Tente fazer login.');
         } else if (authError.message.includes('Email domain not allowed')) {
@@ -145,7 +142,6 @@ export function SignUp({ onBackToLogin }: SignUpProps) {
         }]);
 
       if (profileError) {
-        console.error('Error creating user profile');
         // Try to update existing profile if insert failed
         const { error: updateError } = await supabase
           .from('profiles')
@@ -156,7 +152,6 @@ export function SignUp({ onBackToLogin }: SignUpProps) {
           .eq('id', authData.user.id);
 
         if (updateError) {
-          console.error('Error updating user profile');
           setError('Erro ao configurar perfil do usuário.');
           return;
         }
@@ -172,7 +167,6 @@ export function SignUp({ onBackToLogin }: SignUpProps) {
         }]);
 
       if (roleError && roleError.code !== '23505') { // Ignore duplicate error
-        console.error('Error creating user role');
         setError('Erro ao configurar permissões do usuário.');
         return;
       }
@@ -186,7 +180,6 @@ export function SignUp({ onBackToLogin }: SignUpProps) {
       onBackToLogin();
 
     } catch (err) {
-      console.error('Unexpected error during signup');
       setError('Erro inesperado. Tente novamente.');
     } finally {
       setIsLoading(false);

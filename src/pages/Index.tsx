@@ -7,6 +7,7 @@ import { Dashboard } from "@/components/Dashboard";
 import { FluxoCaixa } from "@/components/FluxoCaixa";
 import { ContasReceber } from "@/components/ContasReceber";
 import { ContasPagar } from "@/components/ContasPagar";
+import { Contratos } from "@/components/Contratos";
 import { Clientes } from "@/components/Clientes";
 import { Fornecedores } from "@/components/Fornecedores";
 import { CalendarioContas } from "@/components/CalendarioContas";
@@ -57,6 +58,8 @@ const Index = () => {
         return <ContasReceber />;
       case "contas-pagar":
         return <ContasPagar />;
+      case "contratos":
+        return <Contratos />;
       case "clientes":
         return <Clientes />;
       case "fornecedores":

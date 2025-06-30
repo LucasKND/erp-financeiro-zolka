@@ -3,8 +3,18 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, Filter, FileText, Calendar, DollarSign, User } from "lucide-react";
+import { Plus, Search, Filter, FileText, Calendar, DollarSign, User, MoreVertical, Edit, Trash2 } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
+import { NovoContratoDialog } from "./NovoContratoDialog";
+import { ConfirmDeleteDialog } from "./ConfirmDeleteDialog";
+import { useToast } from "@/hooks/use-toast";
 
 // Dados fictícios para demonstração - em breve conectaremos ao banco de dados
 const contratosIniciais = [
@@ -49,6 +59,18 @@ const contratosIniciais = [
 export function Contratos() {
   const [contratos, setContratos] = useState(contratosIniciais);
   const [searchTerm, setSearchTerm] = useState("");
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [contratoToDelete, setContratoToDelete] = useState<any>(null);
+  const [deleting, setDeleting] = useState(false);
+  const { toast } = useToast();
+
+  const handleContratoAdicionado = () => {
+    // TODO: Refazer fetch dos contratos quando conectar ao banco
+    toast({
+      title: "Sucesso!",
+      description: "Lista de contratos será atualizada quando conectada ao banco de dados.",
+    });
+  };
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -105,6 +127,46 @@ export function Contratos() {
     return dataFim <= dias30 && dataFim >= hoje;
   }).length;
 
+  const handleEditClick = (contrato: any) => {
+    // TODO: Implementar dialog de edição
+    toast({
+      title: "Editar Contrato",
+      description: `Edição do contrato ${contrato.numero} será implementada em breve.`,
+    });
+  };
+
+  const handleDeleteClick = (contrato: any) => {
+    setContratoToDelete(contrato);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!contratoToDelete) return;
+
+    try {
+      setDeleting(true);
+      
+      // Simular exclusão (remover do estado local)
+      setContratos(contratos.filter(contrato => contrato.id !== contratoToDelete.id));
+      
+      toast({
+        title: "Contrato excluído!",
+        description: `O contrato ${contratoToDelete.numero} foi excluído com sucesso.`,
+      });
+    } catch (error) {
+      console.error('Error deleting contract:', error);
+      toast({
+        title: "Erro ao excluir contrato",
+        description: "Não foi possível excluir o contrato.",
+        variant: "destructive",
+      });
+    } finally {
+      setDeleting(false);
+      setDeleteDialogOpen(false);
+      setContratoToDelete(null);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -112,10 +174,7 @@ export function Contratos() {
           <h1 className="text-3xl font-bold text-foreground">Contratos</h1>
           <p className="text-muted-foreground mt-1">Gerencie todos os contratos da empresa</p>
         </div>
-        <Button className="bg-blue-600 hover:bg-blue-700">
-          <Plus className="w-4 h-4 mr-2" />
-          Novo Contrato
-        </Button>
+        <NovoContratoDialog onContratoAdicionado={handleContratoAdicionado} />
       </div>
 
       {/* Cards de Resumo */}
@@ -233,14 +292,30 @@ export function Contratos() {
                     <TableCell>{formatDate(contrato.dataFim)}</TableCell>
                     <TableCell>{getStatusBadge(contrato.status)}</TableCell>
                     <TableCell>
-                      <div className="flex items-center space-x-2">
-                        <Button variant="outline" size="sm">
-                          Editar
-                        </Button>
-                        <Button variant="outline" size="sm">
-                          Visualizar
-                        </Button>
-                      </div>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem
+                            onClick={() => handleEditClick(contrato)}
+                            className="cursor-pointer"
+                          >
+                            <Edit className="mr-2 h-4 w-4" />
+                            Editar
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            onClick={() => handleDeleteClick(contrato)}
+                            className="cursor-pointer text-red-600 focus:text-red-600"
+                          >
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Deletar
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </TableCell>
                   </TableRow>
                 ))
@@ -249,6 +324,17 @@ export function Contratos() {
           </Table>
         </CardContent>
       </Card>
+
+      {/* Modal de confirmação de exclusão */}
+      <ConfirmDeleteDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        onConfirm={handleConfirmDelete}
+        title="Confirmar exclusão do contrato"
+        description="Esta ação não pode ser desfeita."
+        itemName={contratoToDelete ? `${contratoToDelete.numero} - ${contratoToDelete.cliente}` : ""}
+        isLoading={deleting}
+      />
     </div>
   );
 }

@@ -11,14 +11,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useAccountsData } from "@/hooks/useAccountsData";
+import { useNotifications } from "@/hooks/useNotifications";
 
 interface NotificationDropdownProps {
   setActiveModule: (module: string) => void;
 }
 
 export function NotificationDropdown({ setActiveModule }: NotificationDropdownProps) {
-  const { accounts, loading } = useAccountsData();
+  const { accounts, loading } = useNotifications();
 
   // Filtrar contas vencidas
   const contasVencidas = accounts.filter(conta => conta.status === 'overdue');

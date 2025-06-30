@@ -90,6 +90,15 @@ export function useAccountsData() {
     fetchAccounts();
   };
 
+  // Função para invalidar dados específicos por tipo e ID
+  const invalidateAccount = (accountId: string, type: 'payable' | 'receivable') => {
+    setAccounts(prevAccounts => 
+      prevAccounts.filter(account => 
+        !(account.id === accountId && account.type === type)
+      )
+    );
+  };
+
   // Calcular totais
   const totals = {
     totalReceivable: accounts
@@ -108,6 +117,7 @@ export function useAccountsData() {
     loading,
     error,
     refetch,
+    invalidateAccount,
     totals
   };
 }

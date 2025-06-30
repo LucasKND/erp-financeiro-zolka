@@ -11,23 +11,37 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useAccountsData } from "@/hooks/useAccountsData";
 
 interface NotificationDropdownProps {
   setActiveModule: (module: string) => void;
 }
 
 export function NotificationDropdown({ setActiveModule }: NotificationDropdownProps) {
-  const [contasAtrasadas, setContasAtrasadas] = useState({
-    receber: [
-      { id: 1, cliente: "João Silva", valor: 2500.00, diasAtraso: 5 },
-      { id: 3, cliente: "Empresa XYZ", valor: 5000.00, diasAtraso: 10 }
-    ],
-    pagar: [
-      { id: 3, fornecedor: "Marketing Digital", valor: 2500.00, diasAtraso: 7 }
-    ]
-  });
+  const { accounts, loading } = useAccountsData();
 
-  const totalNotificacoes = contasAtrasadas.receber.length + contasAtrasadas.pagar.length;
+  // Filtrar contas vencidas
+  const contasVencidas = accounts.filter(conta => conta.status === 'overdue');
+  
+  const contasReceberVencidas = contasVencidas
+    .filter(conta => conta.type === 'receivable')
+    .map(conta => ({
+      id: conta.id,
+      cliente: conta.client_name || 'Cliente não informado',
+      valor: conta.amount,
+      diasAtraso: Math.floor((new Date().getTime() - new Date(conta.due_date).getTime()) / (1000 * 60 * 60 * 24))
+    }));
+
+  const contasPagarVencidas = contasVencidas
+    .filter(conta => conta.type === 'payable')
+    .map(conta => ({
+      id: conta.id,
+      fornecedor: conta.supplier_name || 'Fornecedor não informado',
+      valor: conta.amount,
+      diasAtraso: Math.floor((new Date().getTime() - new Date(conta.due_date).getTime()) / (1000 * 60 * 60 * 24))
+    }));
+
+  const totalNotificacoes = contasReceberVencidas.length + contasPagarVencidas.length;
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -39,6 +53,14 @@ export function NotificationDropdown({ setActiveModule }: NotificationDropdownPr
   const handleNotificationClick = (tipo: 'receber' | 'pagar') => {
     setActiveModule(tipo === 'receber' ? 'contas-receber' : 'contas-pagar');
   };
+
+  if (loading) {
+    return (
+      <Button variant="ghost" size="sm" className="relative">
+        <Bell className="w-5 h-5" />
+      </Button>
+    );
+  }
 
   return (
     <DropdownMenu>
@@ -59,13 +81,13 @@ export function NotificationDropdown({ setActiveModule }: NotificationDropdownPr
         <DropdownMenuLabel className="font-semibold">Notificações</DropdownMenuLabel>
         <DropdownMenuSeparator />
         
-        {contasAtrasadas.receber.length > 0 && (
+        {contasReceberVencidas.length > 0 && (
           <>
             <DropdownMenuLabel className="text-sm text-red-600 flex items-center">
               <TrendingUp className="w-4 h-4 mr-2" />
               Contas a Receber Atrasadas
             </DropdownMenuLabel>
-            {contasAtrasadas.receber.map((conta) => (
+            {contasReceberVencidas.map((conta) => (
               <DropdownMenuItem 
                 key={conta.id}
                 onClick={() => handleNotificationClick('receber')}
@@ -86,14 +108,14 @@ export function NotificationDropdown({ setActiveModule }: NotificationDropdownPr
           </>
         )}
 
-        {contasAtrasadas.pagar.length > 0 && (
+        {contasPagarVencidas.length > 0 && (
           <>
             <DropdownMenuSeparator />
             <DropdownMenuLabel className="text-sm text-orange-600 flex items-center">
               <TrendingDown className="w-4 h-4 mr-2" />
               Contas a Pagar Atrasadas
             </DropdownMenuLabel>
-            {contasAtrasadas.pagar.map((conta) => (
+            {contasPagarVencidas.map((conta) => (
               <DropdownMenuItem 
                 key={conta.id}
                 onClick={() => handleNotificationClick('pagar')}

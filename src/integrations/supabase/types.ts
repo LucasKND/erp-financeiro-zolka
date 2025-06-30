@@ -112,6 +112,73 @@ export type Database = {
           },
         ]
       }
+      calendar_events: {
+        Row: {
+          account_payable_id: string | null
+          account_receivable_id: string | null
+          amount: number
+          company_id: string
+          created_at: string
+          created_by: string
+          date: string
+          id: string
+          status: string
+          title: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          account_payable_id?: string | null
+          account_receivable_id?: string | null
+          amount: number
+          company_id: string
+          created_at?: string
+          created_by: string
+          date: string
+          id?: string
+          status?: string
+          title: string
+          type: string
+          updated_at?: string
+        }
+        Update: {
+          account_payable_id?: string | null
+          account_receivable_id?: string | null
+          amount?: number
+          company_id?: string
+          created_at?: string
+          created_by?: string
+          date?: string
+          id?: string
+          status?: string
+          title?: string
+          type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "calendar_events_account_payable_id_fkey"
+            columns: ["account_payable_id"]
+            isOneToOne: true
+            referencedRelation: "accounts_payable"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "calendar_events_account_receivable_id_fkey"
+            columns: ["account_receivable_id"]
+            isOneToOne: true
+            referencedRelation: "accounts_receivable"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "calendar_events_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       companies: {
         Row: {
           access_code: string

@@ -12,6 +12,8 @@ interface ConfirmDeleteDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onConfirm: () => void;
+  deleting?: boolean;
+  conta?: any;
   title?: string;
   description?: string;
   itemName?: string;
@@ -22,6 +24,8 @@ export function ConfirmDeleteDialog({
   open,
   onOpenChange,
   onConfirm,
+  deleting = false,
+  conta,
   title = "Confirmar exclusão",
   description = "Esta ação não pode ser desfeita.",
   itemName,
@@ -29,7 +33,13 @@ export function ConfirmDeleteDialog({
 }: ConfirmDeleteDialogProps) {
   const handleConfirm = () => {
     onConfirm();
-    onOpenChange(false);
+  };
+
+  const getDisplayName = () => {
+    if (conta) {
+      return `${conta.banco} - Ag: ${conta.agencia} / CC: ${conta.conta}`;
+    }
+    return itemName;
   };
 
   return (
@@ -46,9 +56,9 @@ export function ConfirmDeleteDialog({
         
         <div className="mt-2 text-center">
           <p className="text-sm text-gray-500 dark:text-gray-400">
-            {itemName && (
+            {(conta || itemName) && (
               <>
-                Tem certeza que deseja excluir <span className="font-medium text-gray-900 dark:text-gray-100">"{itemName}"</span>?
+                Tem certeza que deseja excluir <span className="font-medium text-gray-900 dark:text-gray-100">"{getDisplayName()}"</span>?
                 <br />
                 <br />
               </>
@@ -61,7 +71,7 @@ export function ConfirmDeleteDialog({
           <Button
             variant="outline"
             onClick={() => onOpenChange(false)}
-            disabled={isLoading}
+            disabled={deleting || isLoading}
             className="w-full sm:w-auto"
           >
             Cancelar
@@ -69,10 +79,10 @@ export function ConfirmDeleteDialog({
           <Button
             variant="destructive"
             onClick={handleConfirm}
-            disabled={isLoading}
+            disabled={deleting || isLoading}
             className="w-full sm:w-auto bg-red-600 hover:bg-red-700 dark:bg-red-600 dark:hover:bg-red-700"
           >
-            {isLoading ? "Excluindo..." : "Excluir"}
+            {deleting || isLoading ? "Excluindo..." : "Excluir"}
           </Button>
         </DialogFooter>
       </DialogContent>

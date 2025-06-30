@@ -1,14 +1,149 @@
-
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { Settings, User, Shield, Building, Users, Bell, Database } from "lucide-react";
+import { Settings, User, Shield, Building, Users, Bell, Database, Plus, MoreVertical, Edit, Trash2 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { useProfile } from "@/hooks/useProfile";
+import { NovaContaBancariaDialog } from "./NovaContaBancariaDialog";
+import { ConfirmDeleteDialog } from "./ConfirmDeleteDialog";
 
 export function Configuracoes() {
+  const [loading, setLoading] = useState(false);
+  const [novaContaDialogOpen, setNovaContaDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [contaToDelete, setContaToDelete] = useState<any>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [contasBancarias, setContasBancarias] = useState<any[]>([]);
+  const [companyData, setCompanyData] = useState({
+    nome: "",
+    cnpj: "",
+    email: "",
+    telefone: ""
+  });
+  const { toast } = useToast();
+  const { profile, company } = useProfile();
+
+  const handleContaAdicionada = (novaConta: any) => {
+    setContasBancarias(prev => [novaConta, ...prev]);
+    toast({
+      title: "Conta bancária adicionada!",
+      description: "A conta foi adicionada com sucesso.",
+    });
+  };
+
+  const handleEditarConta = (conta: any) => {
+    // TODO: Implementar edição de conta
+    console.log('Editar conta:', conta);
+    toast({
+      title: "Em desenvolvimento",
+      description: "Funcionalidade de edição será implementada em breve.",
+    });
+  };
+
+  const handleDeleteConta = (conta: any) => {
+    setContaToDelete(conta);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!contaToDelete) return;
+
+    try {
+      setDeleting(true);
+      
+      // Remove da lista local (aqui você pode implementar a exclusão do banco de dados)
+      setContasBancarias(contasBancarias.filter(conta => conta.id !== contaToDelete.id));
+      
+      toast({
+        title: "Conta excluída!",
+        description: "A conta bancária foi excluída com sucesso.",
+      });
+    } catch (error) {
+      console.error('Error deleting bank account:', error);
+      toast({
+        title: "Erro ao excluir conta",
+        description: "Não foi possível excluir a conta bancária.",
+        variant: "destructive",
+      });
+    } finally {
+      setDeleting(false);
+      setDeleteDialogOpen(false);
+      setContaToDelete(null);
+    }
+  };
+
+  // Carregar dados da empresa quando o componente for montado
+  useEffect(() => {
+    if (company) {
+      setCompanyData({
+        nome: company.name || "",
+        cnpj: (company as any).cnpj || "",
+        email: (company as any).email || "",
+        telefone: (company as any).phone || ""
+      });
+    }
+  }, [company]);
+
+  const handleInputChange = (field: string, value: string) => {
+    setCompanyData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const handleSalvarAlteracoes = async () => {
+    if (!profile?.company_id) {
+      toast({
+        title: "Erro",
+        description: "Company ID não encontrado.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const { error } = await supabase
+        .from('companies')
+        .update({
+          name: companyData.nome,
+          cnpj: companyData.cnpj,
+          email: companyData.email,
+          phone: companyData.telefone
+        })
+        .eq('id', profile.company_id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Configurações salvas!",
+        description: "As informações da empresa foram atualizadas com sucesso.",
+      });
+    } catch (error) {
+      console.error('Error updating company:', error);
+      toast({
+        title: "Erro ao salvar",
+        description: "Não foi possível salvar as configurações da empresa.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -50,21 +185,48 @@ export function Configuracoes() {
               <CardContent className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="empresa-nome">Nome da Empresa</Label>
-                  <Input id="empresa-nome" defaultValue="Minha Empresa Ltda" />
+                  <Input 
+                    id="empresa-nome" 
+                    placeholder="Digite o nome da empresa"
+                    value={companyData.nome}
+                    onChange={(e) => handleInputChange('nome', e.target.value)}
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="empresa-cnpj">CNPJ</Label>
-                  <Input id="empresa-cnpj" defaultValue="12.345.678/0001-90" />
+                  <Input 
+                    id="empresa-cnpj" 
+                    placeholder="00.000.000/0000-00"
+                    value={companyData.cnpj}
+                    onChange={(e) => handleInputChange('cnpj', e.target.value)}
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="empresa-email">E-mail</Label>
-                  <Input id="empresa-email" defaultValue="contato@minhaempresa.com" />
+                  <Input 
+                    id="empresa-email" 
+                    type="email"
+                    placeholder="contato@empresa.com"
+                    value={companyData.email}
+                    onChange={(e) => handleInputChange('email', e.target.value)}
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="empresa-telefone">Telefone</Label>
-                  <Input id="empresa-telefone" defaultValue="(11) 3333-3333" />
+                  <Input 
+                    id="empresa-telefone" 
+                    placeholder="(00) 0000-0000"
+                    value={companyData.telefone}
+                    onChange={(e) => handleInputChange('telefone', e.target.value)}
+                  />
                 </div>
-                <Button className="w-full">Salvar Alterações</Button>
+                <Button 
+                  className="w-full" 
+                  onClick={handleSalvarAlteracoes}
+                  disabled={loading}
+                >
+                  {loading ? "Salvando..." : "Salvar Alterações"}
+                </Button>
               </CardContent>
             </Card>
 
@@ -97,28 +259,69 @@ export function Configuracoes() {
         <TabsContent value="financeiro">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <Card>
-              <CardHeader>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle>Contas Bancárias</CardTitle>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => setNovaContaDialogOpen(true)}
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Adicionar
+                </Button>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  <div className="flex items-center justify-between p-3 border rounded-lg">
-                    <div>
-                      <p className="font-medium">Banco do Brasil</p>
-                      <p className="text-sm text-gray-500">Ag: 1234-5 / CC: 12345-6</p>
+                  {contasBancarias.length === 0 ? (
+                    <div className="text-center py-8">
+                      <p className="text-sm text-muted-foreground mb-4">Nenhuma conta bancária cadastrada</p>
+                      <Button 
+                        variant="outline" 
+                        onClick={() => setNovaContaDialogOpen(true)}
+                      >
+                        <Plus className="w-4 h-4 mr-2" />
+                        Adicionar primeira conta
+                      </Button>
                     </div>
-                    <Badge variant="outline" className="text-green-600 border-green-300">Ativa</Badge>
-                  </div>
-                  <div className="flex items-center justify-between p-3 border rounded-lg">
-                    <div>
-                      <p className="font-medium">Itaú</p>
-                      <p className="text-sm text-gray-500">Ag: 5678 / CC: 67890-1</p>
-                    </div>
-                    <Badge variant="outline">Inativa</Badge>
-                  </div>
-                  <Button variant="outline" className="w-full">
-                    + Adicionar Nova Conta
-                  </Button>
+                  ) : (
+                    contasBancarias.map((conta) => (
+                      <div key={conta.id} className="flex items-center justify-between p-3 border rounded-lg">
+                        <div>
+                          <p className="font-medium">{conta.banco}</p>
+                          <p className="text-sm text-gray-500">Ag: {conta.agencia} / CC: {conta.conta}</p>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Badge 
+                            variant={conta.ativa ? "outline" : "destructive"} 
+                            className={conta.ativa ? "text-green-600 border-green-300" : "text-red-600 border-red-300"}
+                          >
+                            {conta.ativa ? "Ativa" : "Inativa"}
+                          </Badge>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="sm">
+                                <MoreVertical className="w-4 h-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent>
+                              <DropdownMenuItem onClick={() => handleEditarConta(conta)}>
+                                <Edit className="w-4 h-4 mr-2" />
+                                Editar
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem 
+                                onClick={() => handleDeleteConta(conta)}
+                                className="text-red-600"
+                              >
+                                <Trash2 className="w-4 h-4 mr-2" />
+                                Excluir
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
+                      </div>
+                    ))
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -261,6 +464,20 @@ export function Configuracoes() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      <NovaContaBancariaDialog 
+        open={novaContaDialogOpen}
+        onOpenChange={setNovaContaDialogOpen}
+        onContaAdicionada={handleContaAdicionada}
+      />
+
+      <ConfirmDeleteDialog 
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        onConfirm={handleConfirmDelete}
+        deleting={deleting}
+        conta={contaToDelete}
+      />
     </div>
   );
 }

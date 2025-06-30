@@ -3,7 +3,10 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { FileText, Download, TrendingUp, TrendingDown, BarChart3, PieChart } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { FileText, Download, TrendingUp, TrendingDown, BarChart3, PieChart, Calendar } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RechartsPie, Pie, Cell, LineChart, Line } from "recharts";
 import { supabase } from "@/integrations/supabase/client";
 import { useProfile } from "@/hooks/useProfile";
@@ -34,40 +37,132 @@ interface RelatoriosData {
   }>;
 }
 
+type FilterPeriod = 'mensal' | 'trimestral' | 'semestral' | 'anual' | 'personalizado';
+
 export function Relatorios() {
   const [relatoriosData, setRelatoriosData] = useState<RelatoriosData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [filterPeriod, setFilterPeriod] = useState<FilterPeriod>('mensal');
+  const [customStartDate, setCustomStartDate] = useState('');
+  const [customEndDate, setCustomEndDate] = useState('');
   const { profile, company } = useProfile();
   const { toast } = useToast();
+
+  const getDateRange = () => {
+    const now = new Date();
+    let startDate: Date;
+    let endDate = new Date(now);
+
+    switch (filterPeriod) {
+      case 'mensal':
+        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+        break;
+      case 'trimestral':
+        const currentQuarter = Math.floor(now.getMonth() / 3);
+        startDate = new Date(now.getFullYear(), currentQuarter * 3, 1);
+        break;
+      case 'semestral':
+        const currentSemester = Math.floor(now.getMonth() / 6);
+        startDate = new Date(now.getFullYear(), currentSemester * 6, 1);
+        break;
+      case 'anual':
+        startDate = new Date(now.getFullYear(), 0, 1);
+        break;
+      case 'personalizado':
+        if (customStartDate && customEndDate) {
+          startDate = new Date(customStartDate);
+          endDate = new Date(customEndDate);
+        } else {
+          startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+        }
+        break;
+      default:
+        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+    }
+
+    return { startDate: startDate.toISOString().split('T')[0], endDate: endDate.toISOString().split('T')[0] };
+  };
 
   const fetchRelatoriosData = async () => {
     if (!profile?.company_id) return;
 
     try {
       setLoading(true);
+      const { startDate, endDate } = getDateRange();
 
-      // Buscar totais de contas a receber
+      // Buscar contas a receber no período
       const { data: receivableData, error: receivableError } = await supabase
-        .rpc('get_accounts_receivable_totals', { company_uuid: profile.company_id });
+        .from('accounts_receivable')
+        .select('*')
+        .eq('company_id', profile.company_id)
+        .gte('due_date', startDate)
+        .lte('due_date', endDate);
 
       if (receivableError) throw receivableError;
 
-      // Buscar totais de contas a pagar
+      // Buscar contas a pagar no período
       const { data: payableData, error: payableError } = await supabase
-        .rpc('get_accounts_payable_totals', { company_uuid: profile.company_id });
+        .from('accounts_payable')
+        .select('*')
+        .eq('company_id', profile.company_id)
+        .gte('due_date', startDate)
+        .lte('due_date', endDate);
 
       if (payableError) throw payableError;
 
-      // Buscar dados do fluxo de caixa
-      const { data: cashFlowData, error: cashFlowError } = await supabase
-        .rpc('get_cash_flow_data', { company_uuid: profile.company_id });
+      // Calcular totais de contas a receber
+      const receivableTotals = {
+        total_open: receivableData?.filter(r => r.status === 'open').reduce((sum, r) => sum + Number(r.amount), 0) || 0,
+        total_overdue: receivableData?.filter(r => r.status === 'overdue').reduce((sum, r) => sum + Number(r.amount), 0) || 0,
+        total_received: receivableData?.filter(r => r.status === 'received').reduce((sum, r) => sum + Number(r.amount), 0) || 0,
+        count_open: receivableData?.filter(r => r.status === 'open').length || 0,
+        count_overdue: receivableData?.filter(r => r.status === 'overdue').length || 0,
+        count_received: receivableData?.filter(r => r.status === 'received').length || 0,
+      };
 
-      if (cashFlowError) throw cashFlowError;
+      // Calcular totais de contas a pagar
+      const payableTotals = {
+        total_open: payableData?.filter(p => p.status === 'open').reduce((sum, p) => sum + Number(p.amount), 0) || 0,
+        total_overdue: payableData?.filter(p => p.status === 'overdue').reduce((sum, p) => sum + Number(p.amount), 0) || 0,
+        total_paid: payableData?.filter(p => p.status === 'paid').reduce((sum, p) => sum + Number(p.amount), 0) || 0,
+        count_open: payableData?.filter(p => p.status === 'open').length || 0,
+        count_overdue: payableData?.filter(p => p.status === 'overdue').length || 0,
+        count_paid: payableData?.filter(p => p.status === 'paid').length || 0,
+      };
+
+      // Gerar dados de fluxo de caixa agrupados por mês
+      const cashFlowMap = new Map();
+      
+      // Agrupar recebimentos por mês
+      receivableData?.filter(r => r.status === 'received').forEach(r => {
+        const monthKey = new Date(r.due_date).toISOString().slice(0, 7);
+        const monthName = new Date(r.due_date).toLocaleDateString('pt-BR', { month: 'short' });
+        if (!cashFlowMap.has(monthKey)) {
+          cashFlowMap.set(monthKey, { month_name: monthName, entradas: 0, saidas: 0, saldo: 0 });
+        }
+        cashFlowMap.get(monthKey).entradas += Number(r.amount);
+      });
+
+      // Agrupar pagamentos por mês
+      payableData?.filter(p => p.status === 'paid').forEach(p => {
+        const monthKey = new Date(p.due_date).toISOString().slice(0, 7);
+        const monthName = new Date(p.due_date).toLocaleDateString('pt-BR', { month: 'short' });
+        if (!cashFlowMap.has(monthKey)) {
+          cashFlowMap.set(monthKey, { month_name: monthName, entradas: 0, saidas: 0, saldo: 0 });
+        }
+        cashFlowMap.get(monthKey).saidas += Number(p.amount);
+      });
+
+      // Calcular saldo e converter para array
+      const cashFlowData = Array.from(cashFlowMap.values()).map(item => ({
+        ...item,
+        saldo: item.entradas - item.saidas
+      })).sort((a, b) => a.month_name.localeCompare(b.month_name));
 
       setRelatoriosData({
-        receivableTotals: receivableData?.[0] || { total_open: 0, total_overdue: 0, total_received: 0, count_open: 0, count_overdue: 0, count_received: 0 },
-        payableTotals: payableData?.[0] || { total_open: 0, total_overdue: 0, total_paid: 0, count_open: 0, count_overdue: 0, count_paid: 0 },
-        cashFlowData: cashFlowData || []
+        receivableTotals,
+        payableTotals,
+        cashFlowData
       });
     } catch (error) {
       console.error('Error fetching reports data:', error);
@@ -85,13 +180,20 @@ export function Relatorios() {
     if (profile?.company_id) {
       fetchRelatoriosData();
     }
-  }, [profile?.company_id]);
+  }, [profile?.company_id, filterPeriod, customStartDate, customEndDate]);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
       currency: 'BRL'
     }).format(value);
+  };
+
+  const getPeriodLabel = () => {
+    const { startDate, endDate } = getDateRange();
+    const start = new Date(startDate).toLocaleDateString('pt-BR');
+    const end = new Date(endDate).toLocaleDateString('pt-BR');
+    return `${start} - ${end}`;
   };
 
   // Calcular dados do DRE
@@ -168,6 +270,64 @@ export function Relatorios() {
         </Button>
       </div>
 
+      {/* Filtros de Período */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center">
+            <Calendar className="w-5 h-5 mr-2" />
+            Filtros de Período
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-wrap items-end gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="period">Período</Label>
+              <Select value={filterPeriod} onValueChange={(value: FilterPeriod) => setFilterPeriod(value)}>
+                <SelectTrigger className="w-40">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="mensal">Mensal</SelectItem>
+                  <SelectItem value="trimestral">Trimestral</SelectItem>
+                  <SelectItem value="semestral">Semestral</SelectItem>
+                  <SelectItem value="anual">Anual</SelectItem>
+                  <SelectItem value="personalizado">Personalizado</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            {filterPeriod === 'personalizado' && (
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="startDate">Data Início</Label>
+                  <Input
+                    id="startDate"
+                    type="date"
+                    value={customStartDate}
+                    onChange={(e) => setCustomStartDate(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="endDate">Data Fim</Label>
+                  <Input
+                    id="endDate"
+                    type="date"
+                    value={customEndDate}
+                    onChange={(e) => setCustomEndDate(e.target.value)}
+                  />
+                </div>
+              </>
+            )}
+            
+            <div className="flex items-center space-x-2">
+              <Badge variant="secondary" className="text-sm">
+                Período: {getPeriodLabel()}
+              </Badge>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Cards de Relatórios Disponíveis */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {relatoriosDisponiveis.map((relatorio, index) => (
@@ -199,7 +359,7 @@ export function Relatorios() {
           <CardHeader>
             <CardTitle className="flex items-center">
               <BarChart3 className="w-5 h-5 mr-2" />
-              DRE Gerencial - Período Atual
+              DRE Gerencial - {getPeriodLabel()}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -292,7 +452,7 @@ export function Relatorios() {
           <CardHeader>
             <CardTitle className="flex items-center">
               <TrendingUp className="w-5 h-5 mr-2" />
-              Fluxo de Caixa - Últimos 6 Meses
+              Fluxo de Caixa - {getPeriodLabel()}
             </CardTitle>
           </CardHeader>
           <CardContent>

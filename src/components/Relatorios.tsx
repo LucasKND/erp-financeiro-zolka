@@ -196,6 +196,182 @@ export function Relatorios() {
     return `${start} - ${end}`;
   };
 
+  const generateDREReport = () => {
+    if (!relatoriosData || !company) return;
+
+    const { startDate, endDate } = getDateRange();
+    const totalReceitas = Number(relatoriosData.receivableTotals.total_received);
+    const totalDespesas = Number(relatoriosData.payableTotals.total_paid);
+    const resultadoLiquido = totalReceitas - totalDespesas;
+
+    const dreContent = `
+DEMONSTRAÇÃO DO RESULTADO DO EXERCÍCIO (DRE)
+${company.name}
+Período: ${getPeriodLabel()}
+Gerado em: ${new Date().toLocaleDateString('pt-BR')}
+
+=================================================
+
+RECEITAS
+Receitas Recebidas:              ${formatCurrency(totalReceitas)}
+Total de Receitas:               ${formatCurrency(totalReceitas)}
+
+DESPESAS
+Despesas Pagas:                  ${formatCurrency(totalDespesas)}
+Total de Despesas:               ${formatCurrency(totalDespesas)}
+
+=================================================
+
+RESULTADO LÍQUIDO:               ${formatCurrency(resultadoLiquido)}
+
+=================================================
+
+INDICADORES ADICIONAIS:
+- Contas a Receber em Aberto:    ${formatCurrency(relatoriosData.receivableTotals.total_open)}
+- Contas a Receber Vencidas:     ${formatCurrency(relatoriosData.receivableTotals.total_overdue)}
+- Contas a Pagar em Aberto:      ${formatCurrency(relatoriosData.payableTotals.total_open)}
+- Contas a Pagar Vencidas:       ${formatCurrency(relatoriosData.payableTotals.total_overdue)}
+
+Total de Contas Recebidas: ${relatoriosData.receivableTotals.count_received}
+Total de Contas Pagas: ${relatoriosData.payableTotals.count_paid}
+    `;
+
+    const blob = new Blob([dreContent], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `DRE_${company.name}_${new Date().toISOString().split('T')[0]}.txt`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    toast({
+      title: "DRE Gerada com Sucesso!",
+      description: "O arquivo da DRE foi baixado para seu computador.",
+    });
+  };
+
+  const generateFluxoCaixaReport = () => {
+    if (!relatoriosData || !company) return;
+
+    const fluxoContent = `
+DEMONSTRATIVO DOS FLUXOS DE CAIXA (DFC)
+${company.name}
+Período: ${getPeriodLabel()}
+Gerado em: ${new Date().toLocaleDateString('pt-BR')}
+
+=================================================
+
+FLUXO DE CAIXA POR PERÍODO:
+
+${relatoriosData.cashFlowData.map(item => `
+${item.month_name.toUpperCase()}:
+- Entradas: ${formatCurrency(item.entradas)}
+- Saídas:   ${formatCurrency(item.saidas)}
+- Saldo:    ${formatCurrency(item.saldo)}
+`).join('\n')}
+
+=================================================
+
+RESUMO GERAL:
+Total de Entradas: ${formatCurrency(relatoriosData.cashFlowData.reduce((sum, item) => sum + item.entradas, 0))}
+Total de Saídas:   ${formatCurrency(relatoriosData.cashFlowData.reduce((sum, item) => sum + item.saidas, 0))}
+Saldo Final:       ${formatCurrency(relatoriosData.cashFlowData.reduce((sum, item) => sum + item.saldo, 0))}
+    `;
+
+    const blob = new Blob([fluxoContent], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `DFC_${company.name}_${new Date().toISOString().split('T')[0]}.txt`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    toast({
+      title: "DFC Gerado com Sucesso!",
+      description: "O arquivo do Fluxo de Caixa foi baixado para seu computador.",
+    });
+  };
+
+  const generateContasReceberReport = () => {
+    if (!relatoriosData || !company) return;
+
+    const { startDate, endDate } = getDateRange();
+    
+    const contasContent = `
+RELATÓRIO DE CONTAS A RECEBER
+${company.name}
+Período: ${getPeriodLabel()}
+Gerado em: ${new Date().toLocaleDateString('pt-BR')}
+
+=================================================
+
+RESUMO:
+- Em Aberto:    ${relatoriosData.receivableTotals.count_open} contas - ${formatCurrency(relatoriosData.receivableTotals.total_open)}
+- Vencidas:     ${relatoriosData.receivableTotals.count_overdue} contas - ${formatCurrency(relatoriosData.receivableTotals.total_overdue)}
+- Recebidas:    ${relatoriosData.receivableTotals.count_received} contas - ${formatCurrency(relatoriosData.receivableTotals.total_received)}
+
+TOTAL GERAL: ${relatoriosData.receivableTotals.count_open + relatoriosData.receivableTotals.count_overdue + relatoriosData.receivableTotals.count_received} contas
+
+=================================================
+    `;
+
+    const blob = new Blob([contasContent], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `Contas_Receber_${company.name}_${new Date().toISOString().split('T')[0]}.txt`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    toast({
+      title: "Relatório Gerado com Sucesso!",
+      description: "O relatório de Contas a Receber foi baixado.",
+    });
+  };
+
+  const generateContasPagarReport = () => {
+    if (!relatoriosData || !company) return;
+
+    const contasContent = `
+RELATÓRIO DE CONTAS A PAGAR
+${company.name}
+Período: ${getPeriodLabel()}
+Gerado em: ${new Date().toLocaleDateString('pt-BR')}
+
+=================================================
+
+RESUMO:
+- Em Aberto:    ${relatoriosData.payableTotals.count_open} contas - ${formatCurrency(relatoriosData.payableTotals.total_open)}
+- Vencidas:     ${relatoriosData.payableTotals.count_overdue} contas - ${formatCurrency(relatoriosData.payableTotals.total_overdue)}
+- Pagas:        ${relatoriosData.payableTotals.count_paid} contas - ${formatCurrency(relatoriosData.payableTotals.total_paid)}
+
+TOTAL GERAL: ${relatoriosData.payableTotals.count_open + relatoriosData.payableTotals.count_overdue + relatoriosData.payableTotals.count_paid} contas
+
+=================================================
+    `;
+
+    const blob = new Blob([contasContent], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `Contas_Pagar_${company.name}_${new Date().toISOString().split('T')[0]}.txt`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    toast({
+      title: "Relatório Gerado com Sucesso!",
+      description: "O relatório de Contas a Pagar foi baixado.",
+    });
+  };
+
   // Calcular dados do DRE
   const totalReceitas = relatoriosData ? Number(relatoriosData.receivableTotals.total_received) : 0;
   const totalDespesas = relatoriosData ? Number(relatoriosData.payableTotals.total_paid) : 0;
@@ -219,25 +395,29 @@ export function Relatorios() {
       titulo: "DRE Gerencial",
       descricao: "Demonstrativo de Resultado do Exercício",
       icone: BarChart3,
-      cor: "blue"
+      cor: "blue",
+      onGenerate: generateDREReport
     },
     {
       titulo: "Fluxo de Caixa (DFC)",
       descricao: "Demonstrativo dos Fluxos de Caixa",
       icone: TrendingUp,
-      cor: "green"
+      cor: "green",
+      onGenerate: generateFluxoCaixaReport
     },
     {
       titulo: "Contas a Receber",
       descricao: "Relatório analítico de recebimentos",
       icone: FileText,
-      cor: "purple"
+      cor: "purple",
+      onGenerate: generateContasReceberReport
     },
     {
       titulo: "Contas a Pagar",
       descricao: "Relatório analítico de pagamentos",
       icone: FileText,
-      cor: "red"
+      cor: "red",
+      onGenerate: generateContasPagarReport
     },
   ];
 
@@ -264,7 +444,7 @@ export function Relatorios() {
           <h1 className="text-3xl font-bold text-foreground">Relatórios</h1>
           <p className="text-muted-foreground mt-1">Análises financeiras e relatórios gerenciais - {company?.name}</p>
         </div>
-        <Button variant="outline" className="text-green-600 border-green-300">
+        <Button variant="outline" className="text-green-600 border-green-300" onClick={generateDREReport}>
           <Download className="w-4 h-4 mr-2" />
           Exportar Todos
         </Button>
@@ -344,7 +524,7 @@ export function Relatorios() {
               </div>
             </CardHeader>
             <CardContent>
-              <Button size="sm" variant="outline" className="w-full">
+              <Button size="sm" variant="outline" className="w-full" onClick={relatorio.onGenerate}>
                 <Download className="w-3 h-3 mr-2" />
                 Gerar
               </Button>

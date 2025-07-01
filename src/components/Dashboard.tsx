@@ -96,8 +96,9 @@ export function Dashboard() {
 
     try {
       setLoading(true);
+      console.log('Filtering data for period:', period, 'Date range:', dateRange);
 
-      // Buscar contas a receber filtradas por período
+      // Buscar contas a receber no período
       const { data: receivableData, error: receivableError } = await supabase
         .from('accounts_receivable')
         .select('*')
@@ -107,7 +108,7 @@ export function Dashboard() {
 
       if (receivableError) throw receivableError;
 
-      // Buscar contas a pagar filtradas por período
+      // Buscar contas a pagar no período
       const { data: payableData, error: payableError } = await supabase
         .from('accounts_payable')
         .select('*')
@@ -116,6 +117,9 @@ export function Dashboard() {
         .lte('due_date', dateRange.endDate);
 
       if (payableError) throw payableError;
+
+      console.log('Filtered receivable data:', receivableData);
+      console.log('Filtered payable data:', payableData);
 
       // Calcular totais das contas a receber
       const receivableTotals = {
@@ -137,7 +141,7 @@ export function Dashboard() {
         count_paid: (payableData || []).filter(acc => acc.status === 'paid').length,
       };
 
-      // Calcular saldo total
+      // Calcular saldo total (apenas contas em aberto e vencidas)
       const balance = {
         total_receivable: receivableTotals.total_open + receivableTotals.total_overdue,
         total_payable: payableTotals.total_open + payableTotals.total_overdue,
@@ -146,6 +150,8 @@ export function Dashboard() {
 
       // Gerar dados do fluxo de caixa para o período filtrado
       const cashFlowData = generateCashFlowData(receivableData || [], payableData || [], dateRange);
+
+      console.log('Dashboard data calculated:', { balance, receivableTotals, payableTotals, cashFlowData });
 
       setDashboardData({
         balance,
@@ -166,31 +172,52 @@ export function Dashboard() {
   };
 
   const generateCashFlowData = (receivableData: any[], payableData: any[], dateRange: { startDate: string, endDate: string }) => {
-    const months: { [key: string]: { entradas: number, saidas: number } } = {};
+    // Criar um mapa de meses no período
+    const startDate = new Date(dateRange.startDate);
+    const endDate = new Date(dateRange.endDate);
+    const months: { [key: string]: { entradas: number, saidas: number, monthDate: Date } } = {};
+    
+    // Gerar todos os meses no período
+    const currentDate = new Date(startDate);
+    while (currentDate <= endDate) {
+      const monthKey = currentDate.toISOString().slice(0, 7); // YYYY-MM
+      months[monthKey] = { 
+        entradas: 0, 
+        saidas: 0, 
+        monthDate: new Date(currentDate)
+      };
+      currentDate.setMonth(currentDate.getMonth() + 1);
+    }
     
     // Processar entradas (contas recebidas)
     receivableData.filter(acc => acc.status === 'received').forEach(acc => {
       const monthKey = new Date(acc.due_date).toISOString().slice(0, 7); // YYYY-MM
-      if (!months[monthKey]) months[monthKey] = { entradas: 0, saidas: 0 };
-      months[monthKey].entradas += Number(acc.amount);
+      if (months[monthKey]) {
+        months[monthKey].entradas += Number(acc.amount);
+      }
     });
 
     // Processar saídas (contas pagas)
     payableData.filter(acc => acc.status === 'paid').forEach(acc => {
       const monthKey = new Date(acc.due_date).toISOString().slice(0, 7); // YYYY-MM
-      if (!months[monthKey]) months[monthKey] = { entradas: 0, saidas: 0 };
-      months[monthKey].saidas += Number(acc.amount);
+      if (months[monthKey]) {
+        months[monthKey].saidas += Number(acc.amount);
+      }
     });
 
-    // Converter para array e ordenar
+    // Converter para array e ordenar por data
     return Object.entries(months)
       .map(([month, data]) => ({
-        month_name: new Date(month + '-01').toLocaleDateString('pt-BR', { month: 'short' }),
+        month_name: data.monthDate.toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' }),
         entradas: data.entradas,
         saidas: data.saidas,
         saldo: data.entradas - data.saidas
       }))
-      .sort((a, b) => a.month_name.localeCompare(b.month_name));
+      .sort((a, b) => {
+        const monthA = Object.keys(months).find(key => months[key].monthDate.toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' }) === a.month_name);
+        const monthB = Object.keys(months).find(key => months[key].monthDate.toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' }) === b.month_name);
+        return (monthA || '').localeCompare(monthB || '');
+      });
   };
 
   useEffect(() => {
@@ -200,6 +227,7 @@ export function Dashboard() {
   }, [profile?.company_id, activePeriod, customStartDate, customEndDate]);
 
   const handlePeriodChange = (period: FilterPeriod) => {
+    console.log('Changing period to:', period);
     if (period === 'custom') {
       setCustomPeriodOpen(true);
     } else {
@@ -208,6 +236,7 @@ export function Dashboard() {
   };
 
   const handleCustomPeriodApply = (startDate: string, endDate: string) => {
+    console.log('Applying custom period:', startDate, 'to', endDate);
     setCustomStartDate(startDate);
     setCustomEndDate(endDate);
     setActivePeriod('custom');
@@ -225,6 +254,18 @@ export function Dashboard() {
     { name: "A Pagar", value: Number(dashboardData.payableTotals.total_open), color: "#ef4444" },
     { name: "Pago", value: Number(dashboardData.payableTotals.total_paid), color: "#10b981" },
   ].filter(item => item.value > 0) : [];
+
+  const getPeriodLabel = () => {
+    switch (activePeriod) {
+      case 'week': return 'Última Semana';
+      case 'month': return 'Último Mês';
+      case 'year': return 'Último Ano';
+      case 'custom': return customStartDate && customEndDate ? 
+        `${new Date(customStartDate).toLocaleDateString('pt-BR')} - ${new Date(customEndDate).toLocaleDateString('pt-BR')}` : 
+        'Período Personalizado';
+      default: return 'Último Ano';
+    }
+  };
 
   if (loading) {
     return (
@@ -248,6 +289,7 @@ export function Dashboard() {
         <div>
           <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
           <p className="text-muted-foreground mt-1">Visão geral do seu negócio - {company?.name}</p>
+          <p className="text-sm text-muted-foreground mt-1">Período: {getPeriodLabel()}</p>
         </div>
         <div className="flex space-x-2">
           <Button 
@@ -344,16 +386,21 @@ export function Dashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <Card className="lg:col-span-2">
           <CardHeader>
-            <CardTitle className="text-lg font-semibold">Fluxo de Caixa - Período Selecionado</CardTitle>
-            <CardDescription>Comparativo de entradas e saídas no período</CardDescription>
+            <CardTitle className="text-lg font-semibold">Fluxo de Caixa - {getPeriodLabel()}</CardTitle>
+            <CardDescription>Comparativo de entradas e saídas no período selecionado</CardDescription>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
               <LineChart data={dashboardData.cashFlowData}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="month_name" />
-                <YAxis />
-                <Tooltip formatter={(value) => [`R$ ${Number(value).toLocaleString()}`, ""]} />
+                <YAxis tickFormatter={(value) => `R$ ${(value / 1000).toFixed(0)}k`} />
+                <Tooltip 
+                  formatter={(value, name) => [
+                    `R$ ${Number(value).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, 
+                    name === 'entradas' ? 'Entradas' : name === 'saidas' ? 'Saídas' : 'Saldo'
+                  ]} 
+                />
                 <Line type="monotone" dataKey="entradas" stroke="#10b981" strokeWidth={3} name="Entradas" />
                 <Line type="monotone" dataKey="saidas" stroke="#ef4444" strokeWidth={3} name="Saídas" />
               </LineChart>
@@ -382,7 +429,7 @@ export function Dashboard() {
                         <Cell key={`cell-${index}`} fill={entry.color} />
                       ))}
                     </Pie>
-                    <Tooltip formatter={(value) => `R$ ${Number(value).toLocaleString()}`} />
+                    <Tooltip formatter={(value) => `R$ ${Number(value).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`} />
                   </PieChart>
                 </ResponsiveContainer>
               </CardContent>
@@ -393,7 +440,7 @@ export function Dashboard() {
             <CardHeader>
               <CardTitle className="text-lg font-semibold flex items-center">
                 <AlertCircle className="w-5 h-5 mr-2 text-yellow-600" />
-                Alertas
+                Alertas - {getPeriodLabel()}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
@@ -427,7 +474,7 @@ export function Dashboard() {
                 <div className="flex items-center space-x-3 p-3 bg-green-50 rounded-lg">
                   <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                   <div className="flex-1">
-                    <p className="text-sm font-medium text-green-800">Nenhuma conta vencida</p>
+                    <p className="text-sm font-medium text-green-800">Nenhuma conta vencida no período</p>
                     <p className="text-xs text-green-600">Parabéns! Todas as contas estão em dia.</p>
                   </div>
                 </div>

@@ -25,8 +25,8 @@ const contratosIniciais = [
     cliente: "Empresa ABC Ltda",
     descricao: "Contrato de prestação de serviços de marketing digital",
     valor: 15000.00,
-    dataInicio: "2024-01-15",
-    dataFim: "2024-12-15",
+    dataInicio: "15/01/2024",
+    dataFim: "15/12/2024",
     status: "ativo",
     tipo: "servicos",
     observacoes: "Renovação automática mediante acordo"
@@ -37,8 +37,8 @@ const contratosIniciais = [
     cliente: "TechSoft Solutions",
     descricao: "Contrato de desenvolvimento de software",
     valor: 45000.00,
-    dataInicio: "2024-03-01",
-    dataFim: "2024-09-01",
+    dataInicio: "01/03/2024",
+    dataFim: "01/09/2024",
     status: "em_andamento",
     tipo: "desenvolvimento",
     observacoes: "Projeto dividido em 3 fases"
@@ -49,8 +49,8 @@ const contratosIniciais = [
     cliente: "Loja Virtual Plus",
     descricao: "Contrato de manutenção e suporte técnico",
     valor: 8000.00,
-    dataInicio: "2024-02-01",
-    dataFim: "2025-02-01",
+    dataInicio: "01/02/2024",
+    dataFim: "01/02/2025",
     status: "ativo",
     tipo: "manutencao",
     observacoes: "Suporte 24/7 incluído"
@@ -83,7 +83,12 @@ export function Contratos() {
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('pt-BR');
+    const date = new Date(dateString);
+    return date.toLocaleDateString('pt-BR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    });
   };
 
   const getStatusBadge = (status: string) => {
@@ -123,7 +128,9 @@ export function Contratos() {
     .filter(c => c.status === 'ativo' || c.status === 'em_andamento')
     .reduce((acc, c) => acc + c.valor, 0);
   const contratosVencendo = contratos.filter(c => {
-    const dataFim = new Date(c.dataFim);
+    // Converter data brasileira (dd/mm/yyyy) para objeto Date
+    const [dia, mes, ano] = c.dataFim.split('/');
+    const dataFim = new Date(parseInt(ano), parseInt(mes) - 1, parseInt(dia));
     const hoje = new Date();
     const dias30 = new Date();
     dias30.setDate(hoje.getDate() + 30);

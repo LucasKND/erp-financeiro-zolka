@@ -126,6 +126,7 @@ export function Fornecedores() {
     if (fornecedorToDelete) {
       setFornecedores(prev => prev.filter(f => f.id !== fornecedorToDelete.id));
       setFornecedorToDelete(null);
+      setDeleteDialogOpen(false);
     }
   };
 
@@ -297,7 +298,10 @@ export function Fornecedores() {
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem 
-                          onClick={() => deletarFornecedor(fornecedor.id)}
+                          onSelect={(e) => {
+                            e.preventDefault();
+                            deletarFornecedor(fornecedor.id);
+                          }}
                           className="text-red-600 focus:text-red-600"
                         >
                           <Trash2 className="mr-2 h-4 w-4" />

@@ -32,11 +32,33 @@ export function EditarContratoDialog({ open, onOpenChange, contrato, onContratoE
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
+  // Função para converter data brasileira (dd/mm/yyyy) para formato ISO (yyyy-mm-dd) para input date
+  const convertToInputDate = (brazilianDate: string) => {
+    if (!brazilianDate) return '';
+    const [dia, mes, ano] = brazilianDate.split('/');
+    return `${ano}-${mes.padStart(2, '0')}-${dia.padStart(2, '0')}`;
+  };
+
+  // Função para converter data do input (yyyy-mm-dd) para formato brasileiro (dd/mm/yyyy)
+  const convertToBrazilianDate = (inputDate: string) => {
+    if (!inputDate) return '';
+    const [ano, mes, dia] = inputDate.split('-');
+    return `${dia}/${mes}/${ano}`;
+  };
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type } = e.target;
+    let finalValue = value;
+    
+    if (name === "valor") {
+      finalValue = Number(value);
+    } else if (name === "dataInicio" || name === "dataFim") {
+      finalValue = convertToBrazilianDate(value);
+    }
+    
     setFormData({
       ...formData,
-      [name]: name === "valor" ? Number(value) : value
+      [name]: finalValue
     });
   };
 
@@ -91,11 +113,21 @@ export function EditarContratoDialog({ open, onOpenChange, contrato, onContratoE
           </div>
           <div>
             <Label>Data Início</Label>
-            <Input name="dataInicio" type="date" value={formData.dataInicio} onChange={handleChange} />
+            <Input 
+              name="dataInicio" 
+              type="date" 
+              value={convertToInputDate(formData.dataInicio)} 
+              onChange={handleChange} 
+            />
           </div>
           <div>
             <Label>Data Fim</Label>
-            <Input name="dataFim" type="date" value={formData.dataFim} onChange={handleChange} />
+            <Input 
+              name="dataFim" 
+              type="date" 
+              value={convertToInputDate(formData.dataFim)} 
+              onChange={handleChange} 
+            />
           </div>
           <div>
             <Label>Status</Label>

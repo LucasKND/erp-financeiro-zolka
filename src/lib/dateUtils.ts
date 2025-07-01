@@ -107,3 +107,35 @@ export function formatCurrency(value: number): string {
 export function formatDate(dateString: string): string {
   return new Date(dateString).toLocaleDateString('pt-BR');
 }
+
+// Funções para formatação de datas no padrão brasileiro
+// Função para formatar data no padrão brasileiro (dd/mm/yyyy)
+export const formatDateBR = (dateString: string) => {
+  const date = new Date(dateString);
+  return date.toLocaleDateString('pt-BR', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric'
+  });
+};
+
+// Função para converter data brasileira (dd/mm/yyyy) para formato ISO (yyyy-mm-dd)
+export const convertBRDateToISO = (brazilianDate: string) => {
+  if (!brazilianDate) return '';
+  const [dia, mes, ano] = brazilianDate.split('/');
+  return `${ano}-${mes.padStart(2, '0')}-${dia.padStart(2, '0')}`;
+};
+
+// Função para converter data ISO (yyyy-mm-dd) para formato brasileiro (dd/mm/yyyy)
+export const convertISODateToBR = (isoDate: string) => {
+  if (!isoDate) return '';
+  const [ano, mes, dia] = isoDate.split('-');
+  return `${dia}/${mes}/${ano}`;
+};
+
+// Função para converter data brasileira (dd/mm/yyyy) para objeto Date
+export const parseBRDate = (brazilianDate: string) => {
+  if (!brazilianDate) return null;
+  const [dia, mes, ano] = brazilianDate.split('/');
+  return new Date(parseInt(ano), parseInt(mes) - 1, parseInt(dia));
+};

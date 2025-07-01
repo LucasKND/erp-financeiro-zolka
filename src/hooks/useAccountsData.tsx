@@ -167,6 +167,45 @@ export function useAccountsData() {
     }
   }, [profile?.company_id]);
 
+  // Add real-time updates
+  useEffect(() => {
+    if (!profile?.company_id) return;
+
+    const channel = supabase
+      .channel('accounts-updates')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'accounts_receivable',
+          filter: `company_id=eq.${profile.company_id}`
+        },
+        () => {
+          console.log('Accounts receivable updated, refreshing...');
+          fetchAccounts();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'accounts_payable',
+          filter: `company_id=eq.${profile.company_id}`
+        },
+        () => {
+          console.log('Accounts payable updated, refreshing...');
+          fetchAccounts();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [profile?.company_id]);
+
   const refetch = () => {
     fetchAccounts();
   };

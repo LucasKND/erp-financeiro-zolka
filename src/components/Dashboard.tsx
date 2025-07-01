@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -225,6 +224,45 @@ export function Dashboard() {
       fetchDashboardDataWithFilter(activePeriod);
     }
   }, [profile?.company_id, activePeriod, customStartDate, customEndDate]);
+
+  // Add real-time updates for accounts
+  useEffect(() => {
+    if (!profile?.company_id) return;
+
+    const channel = supabase
+      .channel('dashboard-updates')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'accounts_receivable',
+          filter: `company_id=eq.${profile.company_id}`
+        },
+        () => {
+          console.log('Accounts receivable updated, refreshing dashboard...');
+          fetchDashboardDataWithFilter(activePeriod);
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'accounts_payable',
+          filter: `company_id=eq.${profile.company_id}`
+        },
+        () => {
+          console.log('Accounts payable updated, refreshing dashboard...');
+          fetchDashboardDataWithFilter(activePeriod);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [profile?.company_id, activePeriod]);
 
   const handlePeriodChange = (period: FilterPeriod) => {
     console.log('Changing period to:', period);

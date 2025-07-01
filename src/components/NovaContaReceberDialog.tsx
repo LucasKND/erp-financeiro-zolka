@@ -21,13 +21,16 @@ import {
 } from "@/components/ui/select";
 import { Plus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { useProfile } from "@/hooks/useProfile";
 
 interface NovaContaReceberDialogProps {
-  onContaAdicionada: (conta: any) => void;
+  onContaAdicionada: () => void;
 }
 
 export function NovaContaReceberDialog({ onContaAdicionada }: NovaContaReceberDialogProps) {
   const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     cliente: "",
     descricao: "",
@@ -37,47 +40,94 @@ export function NovaContaReceberDialog({ onContaAdicionada }: NovaContaReceberDi
     dataVencimento: ""
   });
   const { toast } = useToast();
+  const { profile } = useProfile();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    const hoje = new Date();
-    const vencimento = new Date(formData.dataVencimento);
-    let status = "aberto";
-    
-    if (vencimento < hoje) {
-      status = "vencido";
+    if (!profile?.company_id) {
+      toast({
+        title: "Erro",
+        description: "Company ID não encontrado.",
+        variant: "destructive",
+      });
+      return;
     }
 
-    const novaConta = {
-      id: Date.now(),
-      cliente: formData.cliente,
-      descricao: formData.descricao,
-      valorPrevisto: parseFloat(formData.valorPrevisto),
-      dataVencimento: formData.dataVencimento,
-      status,
-      recorrencia: formData.recorrencia,
-      periodoRecorrencia: formData.recorrencia === "sim" ? formData.periodoRecorrencia : null
-    };
+    setLoading(true);
 
-    onContaAdicionada(novaConta);
-    
-    toast({
-      title: "Conta adicionada!",
-      description: `Conta de ${formData.cliente} foi criada com sucesso.`,
-    });
+    try {
+      const hoje = new Date();
+      const vencimento = new Date(formData.dataVencimento);
+      let status: 'open' | 'received' | 'overdue' = "open";
+      
+      if (vencimento < hoje) {
+        status = "overdue";
+      }
 
-    // Reset form
-    setFormData({
-      cliente: "",
-      descricao: "",
-      valorPrevisto: "",
-      recorrencia: "nao",
-      periodoRecorrencia: "",
-      dataVencimento: ""
-    });
-    
-    setOpen(false);
+      // Mapear período de recorrência
+      let recurringPeriod = null;
+      if (formData.recorrencia === "sim") {
+        switch (formData.periodoRecorrencia) {
+          case "mensal":
+            recurringPeriod = "monthly";
+            break;
+          case "semestral":
+            recurringPeriod = "quarterly";
+            break;
+          case "anual":
+            recurringPeriod = "yearly";
+            break;
+        }
+      }
+
+      // Cria a conta a receber no banco
+      const { data: conta, error } = await supabase
+        .from('accounts_receivable')
+        .insert({
+          company_id: profile.company_id,
+          client_name: formData.cliente,
+          description: formData.descricao,
+          amount: parseFloat(formData.valorPrevisto),
+          due_date: formData.dataVencimento,
+          status,
+          is_recurring: formData.recorrencia === "sim",
+          recurring_period: recurringPeriod,
+          created_by: profile.id
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      toast({
+        title: "Conta adicionada!",
+        description: `Conta de ${formData.cliente} foi criada com sucesso.`,
+      });
+
+      onContaAdicionada();
+      
+      // Reset form
+      setFormData({
+        cliente: "",
+        descricao: "",
+        valorPrevisto: "",
+        recorrencia: "nao",
+        periodoRecorrencia: "",
+        dataVencimento: ""
+      });
+      
+      setOpen(false);
+    } catch (error) {
+      console.error('Erro ao criar conta:', error);
+      toast({
+        title: "Erro ao criar conta",
+        description: "Não foi possível criar a conta a receber.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -178,7 +228,9 @@ export function NovaContaReceberDialog({ onContaAdicionada }: NovaContaReceberDi
             <Button type="button" variant="outline" onClick={() => setOpen(false)}>
               Cancelar
             </Button>
-            <Button type="submit">Salvar Conta</Button>
+            <Button type="submit" disabled={loading}>
+              {loading ? "Salvando..." : "Salvar Conta"}
+            </Button>
           </DialogFooter>
         </form>
       </DialogContent>

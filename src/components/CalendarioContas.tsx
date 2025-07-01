@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ChevronLeft, ChevronRight, Calendar } from "lucide-react";
+import { ChevronLeft, ChevronRight, Calendar, Repeat } from "lucide-react";
 import { useAccountsData } from "@/hooks/useAccountsData";
 import { formatCurrency, formatDate } from "@/lib/dateUtils";
 
@@ -104,7 +104,7 @@ export function CalendarioContas() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-foreground">Calendário de Contas</h1>
-          <p className="text-muted-foreground mt-1">Visualize suas contas a pagar e receber por data</p>
+          <p className="text-muted-foreground mt-1">Visualize suas contas a pagar e receber por data (incluindo recorrências)</p>
         </div>
         <div className="flex items-center space-x-4">
           <Button variant="outline" onClick={refetch}>
@@ -122,6 +122,10 @@ export function CalendarioContas() {
             <div className="flex items-center space-x-1">
               <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
               <span className="text-sm text-muted-foreground">Vencidas</span>
+            </div>
+            <div className="flex items-center space-x-1">
+              <Repeat className="w-3 h-3 text-blue-500" />
+              <span className="text-sm text-muted-foreground">Recorrente</span>
             </div>
           </div>
         </div>
@@ -212,7 +216,7 @@ export function CalendarioContas() {
                     {contasNoDia.map((conta) => (
                       <div
                         key={conta.id}
-                        className={`text-xs p-1 rounded cursor-pointer hover:opacity-80 transition-opacity ${
+                        className={`text-xs p-1 rounded cursor-pointer hover:opacity-80 transition-opacity relative ${
                           conta.type === 'receivable'
                             ? conta.status === 'received'
                               ? 'bg-green-100 text-green-800 border border-green-300 dark:bg-green-900/30 dark:text-green-400 dark:border-green-600'
@@ -228,8 +232,15 @@ export function CalendarioContas() {
                         title={`${conta.title} - ${formatCurrency(conta.amount)} - ${
                           conta.status === 'paid' || conta.status === 'received' ? 'Pago' : 
                           conta.status === 'overdue' ? 'Vencido' : 'Aberto'
-                        }`}
+                        }${conta.original_id ? ' (Recorrente)' : ''}`}
                       >
+                        {/* Indicador de recorrência */}
+                        {conta.original_id && (
+                          <div className="absolute top-0 right-0 -mt-1 -mr-1">
+                            <Repeat className="w-3 h-3 text-blue-500" />
+                          </div>
+                        )}
+                        
                         <div className="font-medium truncate">
                           {conta.type === 'receivable' ? conta.client_name : conta.supplier_name}
                         </div>
@@ -241,6 +252,11 @@ export function CalendarioContas() {
                           {conta.status === 'paid' || conta.status === 'received' ? '✓ Pago' : 
                            conta.status === 'overdue' ? '⚠ Vencido' : '⏰ Aberto'}
                         </div>
+                        {conta.original_id && (
+                          <div className="text-xs opacity-75 text-blue-600">
+                            🔄 Recorrente
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>

@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { NovoContratoDialog } from "./NovoContratoDialog";
 import { ConfirmDeleteDialog } from "./ConfirmDeleteDialog";
+import { EditarContratoDialog } from "./EditarContratoDialog";
 import { useToast } from "@/hooks/use-toast";
 
 // Dados fictícios para demonstração - em breve conectaremos ao banco de dados
@@ -62,6 +63,8 @@ export function Contratos() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [contratoToDelete, setContratoToDelete] = useState<any>(null);
   const [deleting, setDeleting] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [contratoToEdit, setContratoToEdit] = useState<any>(null);
   const { toast } = useToast();
 
   const handleContratoAdicionado = () => {
@@ -128,11 +131,12 @@ export function Contratos() {
   }).length;
 
   const handleEditClick = (contrato: any) => {
-    // TODO: Implementar dialog de edição
-    toast({
-      title: "Editar Contrato",
-      description: `Edição do contrato ${contrato.numero} será implementada em breve.`,
-    });
+    setContratoToEdit(contrato);
+    setEditDialogOpen(true);
+  };
+
+  const handleContratoEditado = (contratoEditado: any) => {
+    setContratos(contratos.map(c => c.id === contratoEditado.id ? contratoEditado : c));
   };
 
   const handleDeleteClick = (contrato: any) => {
@@ -335,6 +339,16 @@ export function Contratos() {
         itemName={contratoToDelete ? `${contratoToDelete.numero} - ${contratoToDelete.cliente}` : ""}
         isLoading={deleting}
       />
+
+      {/* Modal de edição de contrato */}
+      {editDialogOpen && contratoToEdit && (
+        <EditarContratoDialog
+          open={editDialogOpen}
+          onOpenChange={setEditDialogOpen}
+          contrato={contratoToEdit}
+          onContratoEditado={handleContratoEditado}
+        />
+      )}
     </div>
   );
 }

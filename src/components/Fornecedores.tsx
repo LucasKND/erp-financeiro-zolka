@@ -245,7 +245,15 @@ export function Fornecedores() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {fornecedores.map((fornecedor) => (
+              {fornecedores
+                .filter(fornecedor => 
+                  fornecedor.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                  fornecedor.documento.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                  fornecedor.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                  fornecedor.categoria.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                  fornecedor.cidade.toLowerCase().includes(searchTerm.toLowerCase())
+                )
+                .map((fornecedor) => (
                 <TableRow key={fornecedor.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
                   <TableCell className="font-medium">{fornecedor.nome}</TableCell>
                   <TableCell>{fornecedor.documento}</TableCell>
@@ -300,6 +308,20 @@ export function Fornecedores() {
                   </TableCell>
                 </TableRow>
               ))}
+              {fornecedores
+                .filter(fornecedor => 
+                  fornecedor.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                  fornecedor.documento.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                  fornecedor.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                  fornecedor.categoria.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                  fornecedor.cidade.toLowerCase().includes(searchTerm.toLowerCase())
+                ).length === 0 && searchTerm && (
+                <TableRow>
+                  <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                    Nenhum fornecedor encontrado com os critérios de busca.
+                  </TableCell>
+                </TableRow>
+              )}
             </TableBody>
           </Table>
         </CardContent>

@@ -33,6 +33,14 @@ export function Configuracoes() {
     email: "",
     telefone: ""
   });
+  const [notificationSettings, setNotificationSettings] = useState({
+    contasVencidas: true,
+    contasAVencer: true,
+    recebimentos: false,
+    pagamentos: false,
+    relatoriosSemanais: true
+  });
+  const [savingNotifications, setSavingNotifications] = useState(false);
   const { toast } = useToast();
   const { profile, company } = useProfile();
 
@@ -144,6 +152,73 @@ export function Configuracoes() {
       setLoading(false);
     }
   };
+
+  const handleSalvarNotificacoes = async () => {
+    if (!profile?.id) {
+      toast({
+        title: "Erro",
+        description: "Usuário não identificado.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setSavingNotifications(true);
+
+    try {
+      // Salvar no localStorage como fallback
+      localStorage.setItem('notificationSettings', JSON.stringify(notificationSettings));
+
+      // Aqui você pode implementar o salvamento no banco de dados se necessário
+      // Por exemplo:
+      /*
+      const { error } = await supabase
+        .from('user_notification_settings')
+        .upsert({
+          user_id: profile.id,
+          ...notificationSettings,
+          updated_at: new Date().toISOString()
+        });
+
+      if (error) throw error;
+      */
+
+      toast({
+        title: "Configurações salvas!",
+        description: "Suas preferências de notificação foram atualizadas.",
+      });
+    } catch (error) {
+      console.error('Error saving notification settings:', error);
+      toast({
+        title: "Erro ao salvar",
+        description: "Não foi possível salvar as configurações de notificação.",
+        variant: "destructive",
+      });
+    } finally {
+      setSavingNotifications(false);
+    }
+  };
+
+  const handleNotificationChange = (setting: string, value: boolean) => {
+    setNotificationSettings(prev => ({
+      ...prev,
+      [setting]: value
+    }));
+  };
+
+  // Carregar configurações de notificação do localStorage quando o componente for montado
+  useEffect(() => {
+    const savedSettings = localStorage.getItem('notificationSettings');
+    if (savedSettings) {
+      try {
+        const parsed = JSON.parse(savedSettings);
+        setNotificationSettings(parsed);
+      } catch (error) {
+        console.error('Error parsing notification settings:', error);
+      }
+    }
+  }, []);
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -423,7 +498,10 @@ export function Configuracoes() {
                     <h4 className="font-medium">Contas Vencidas</h4>
                     <p className="text-sm text-gray-500">Notificar quando uma conta vencer</p>
                   </div>
-                  <Switch defaultChecked />
+                  <Switch 
+                    checked={notificationSettings.contasVencidas}
+                    onCheckedChange={(value) => handleNotificationChange('contasVencidas', value)}
+                  />
                 </div>
 
                 <div className="flex items-center justify-between">
@@ -431,7 +509,10 @@ export function Configuracoes() {
                     <h4 className="font-medium">Contas a Vencer</h4>
                     <p className="text-sm text-gray-500">Notificar 3 dias antes do vencimento</p>
                   </div>
-                  <Switch defaultChecked />
+                  <Switch 
+                    checked={notificationSettings.contasAVencer}
+                    onCheckedChange={(value) => handleNotificationChange('contasAVencer', value)}
+                  />
                 </div>
 
                 <div className="flex items-center justify-between">
@@ -439,7 +520,10 @@ export function Configuracoes() {
                     <h4 className="font-medium">Recebimentos</h4>
                     <p className="text-sm text-gray-500">Notificar quando uma conta for recebida</p>
                   </div>
-                  <Switch />
+                  <Switch 
+                    checked={notificationSettings.recebimentos}
+                    onCheckedChange={(value) => handleNotificationChange('recebimentos', value)}
+                  />
                 </div>
 
                 <div className="flex items-center justify-between">
@@ -447,7 +531,10 @@ export function Configuracoes() {
                     <h4 className="font-medium">Pagamentos</h4>
                     <p className="text-sm text-gray-500">Notificar quando uma conta for paga</p>
                   </div>
-                  <Switch />
+                  <Switch 
+                    checked={notificationSettings.pagamentos}
+                    onCheckedChange={(value) => handleNotificationChange('pagamentos', value)}
+                  />
                 </div>
 
                 <div className="flex items-center justify-between">
@@ -455,10 +542,19 @@ export function Configuracoes() {
                     <h4 className="font-medium">Relatórios Semanais</h4>
                     <p className="text-sm text-gray-500">Enviar resumo semanal por e-mail</p>
                   </div>
-                  <Switch defaultChecked />
+                  <Switch 
+                    checked={notificationSettings.relatoriosSemanais}
+                    onCheckedChange={(value) => handleNotificationChange('relatoriosSemanais', value)}
+                  />
                 </div>
 
-                <Button className="w-full">Salvar Configurações</Button>
+                <Button 
+                  className="w-full"
+                  onClick={handleSalvarNotificacoes}
+                  disabled={savingNotifications}
+                >
+                  {savingNotifications ? "Salvando..." : "Salvar Configurações"}
+                </Button>
               </div>
             </CardContent>
           </Card>

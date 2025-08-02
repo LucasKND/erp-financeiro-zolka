@@ -39,16 +39,18 @@ export const useClientManagement = () => {
 
   const fetchClientCompanies = async () => {
     try {
+      // Buscar empresas cliente E a empresa BPO (APV Financeiro)
       const { data, error } = await supabase
         .from('companies')
         .select('*')
-        .eq('company_type', 'client')
+        .in('company_type', ['client', 'bpo'])
+        .order('company_type', { ascending: false }) // BPO primeiro, depois clientes
         .order('name');
 
       if (error) throw error;
       setClientCompanies(data || []);
     } catch (error: any) {
-      console.error('Erro ao buscar empresas cliente:', error);
+      console.error('Erro ao buscar empresas:', error);
       toast({
         title: "Erro ao carregar empresas",
         description: error.message,

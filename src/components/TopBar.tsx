@@ -13,6 +13,7 @@ import { usePermissions } from "@/hooks/usePermissions";
 import { useClientManagement } from "@/hooks/useClientManagement";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { useSelectedCompany } from "@/contexts/SelectedCompanyContext";
 import { useState } from "react";
 interface TopBarProps {
   setActiveModule: (module: string) => void;
@@ -32,12 +33,12 @@ export function TopBar({
     userRole
   } = usePermissions();
 
-  const { isAdminBPO } = useClientManagement();
+  const { isAdminBPO, clientCompanies } = useClientManagement();
   const { toast } = useToast();
+  const { selectedCompanyId, setSelectedCompanyId } = useSelectedCompany();
 
   const [isEditingName, setIsEditingName] = useState(false);
   const [editedName, setEditedName] = useState('');
-  const [selectedCompanyId, setSelectedCompanyId] = useState<string | null>(null);
 
   // Extract first name from various sources
   const getFirstName = () => {
@@ -103,8 +104,13 @@ export function TopBar({
   };
   const getCompanyDisplayName = () => {
     if (isAdminBPO) {
-      // Se for admin BPO, mostrar "APV Financeiro" ou empresa selecionada
-      return selectedCompanyId ? 'Empresa Cliente Selecionada' : 'APV Financeiro';
+      if (selectedCompanyId) {
+        // Se uma empresa foi selecionada, buscar seu nome
+        const selectedComp = clientCompanies.find(c => c.id === selectedCompanyId);
+        return selectedComp ? selectedComp.name : 'Empresa Selecionada';
+      }
+      // Se nenhuma empresa foi selecionada, mostrar APV Financeiro (padrão)
+      return company?.name || 'APV Financeiro';
     }
     // Se for usuário normal, mostrar nome da empresa dele
     return company?.name || 'Empresa';

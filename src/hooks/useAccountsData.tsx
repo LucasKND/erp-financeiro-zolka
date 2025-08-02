@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useProfile } from "@/hooks/useProfile";
+import { useActiveCompany } from "@/hooks/useActiveCompany";
 
 export interface AccountData {
   id: string;
@@ -86,9 +87,10 @@ export function useAccountsData() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { profile } = useProfile();
+  const { activeCompanyId } = useActiveCompany();
 
   const fetchAccounts = async () => {
-    if (!profile?.company_id) return;
+    if (!activeCompanyId) return;
 
     try {
       setLoading(true);
@@ -98,7 +100,7 @@ export function useAccountsData() {
       const { data: receivableData, error: receivableError } = await supabase
         .from('accounts_receivable')
         .select('*')
-        .eq('company_id', profile.company_id);
+        .eq('company_id', activeCompanyId);
 
       if (receivableError) throw receivableError;
 
@@ -106,7 +108,7 @@ export function useAccountsData() {
       const { data: payableData, error: payableError } = await supabase
         .from('accounts_payable')
         .select('*')
-        .eq('company_id', profile.company_id);
+        .eq('company_id', activeCompanyId);
 
       if (payableError) throw payableError;
 
@@ -162,14 +164,14 @@ export function useAccountsData() {
   };
 
   useEffect(() => {
-    if (profile?.company_id) {
+    if (activeCompanyId) {
       fetchAccounts();
     }
-  }, [profile?.company_id]);
+  }, [activeCompanyId]);
 
   // Add real-time updates
   useEffect(() => {
-    if (!profile?.company_id) return;
+    if (!activeCompanyId) return;
 
     const channel = supabase
       .channel('accounts-updates')
@@ -179,7 +181,7 @@ export function useAccountsData() {
           event: '*',
           schema: 'public',
           table: 'accounts_receivable',
-          filter: `company_id=eq.${profile.company_id}`
+          filter: `company_id=eq.${activeCompanyId}`
         },
         () => {
           console.log('Accounts receivable updated, refreshing...');
@@ -192,7 +194,7 @@ export function useAccountsData() {
           event: '*',
           schema: 'public',
           table: 'accounts_payable',
-          filter: `company_id=eq.${profile.company_id}`
+          filter: `company_id=eq.${activeCompanyId}`
         },
         () => {
           console.log('Accounts payable updated, refreshing...');
@@ -204,7 +206,7 @@ export function useAccountsData() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [profile?.company_id]);
+  }, [activeCompanyId]);
 
   const refetch = () => {
     fetchAccounts();

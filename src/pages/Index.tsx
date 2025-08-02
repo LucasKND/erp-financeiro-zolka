@@ -18,6 +18,7 @@ import CRM from "@/components/CRM";
 import GerenciarClientes from "@/components/GerenciarClientes";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
+import { SelectedCompanyProvider } from "@/contexts/SelectedCompanyContext";
 
 const Index = () => {
   const [activeModule, setActiveModule] = useState("dashboard");
@@ -82,17 +83,19 @@ const Index = () => {
   };
 
   return (
-    <SidebarProvider>
-      <div className="flex min-h-screen w-full bg-background">
-        <AppSidebar activeModule={activeModule} setActiveModule={setActiveModule} />
-        <div className="flex-1 flex flex-col min-w-0">
-          <TopBar setActiveModule={setActiveModule} />
-          <main className="flex-1 p-6 overflow-auto bg-background">
-            {renderActiveModule()}
-          </main>
+    <SelectedCompanyProvider>
+      <SidebarProvider>
+        <div className="flex min-h-screen w-full bg-background">
+          <AppSidebar activeModule={activeModule} setActiveModule={setActiveModule} />
+          <div className="flex-1 flex flex-col min-w-0">
+            <TopBar setActiveModule={setActiveModule} />
+            <main className="flex-1 p-6 overflow-auto bg-background">
+              {renderActiveModule()}
+            </main>
+          </div>
         </div>
-      </div>
-    </SidebarProvider>
+      </SidebarProvider>
+    </SelectedCompanyProvider>
   );
 };
 

@@ -23,6 +23,10 @@ export function CompanySelector({ selectedCompanyId, onCompanyChange }: CompanyS
   const { company: userCompany } = useProfile();
   const [selectedCompany, setSelectedCompany] = useState<ClientCompany | null>(null);
 
+  // Separar empresa BPO das empresas cliente
+  const bpoCompany = clientCompanies.find(c => c.company_type === 'bpo');
+  const clientsOnly = clientCompanies.filter(c => c.company_type === 'client');
+
   useEffect(() => {
     if (selectedCompanyId && clientCompanies.length > 0) {
       const company = clientCompanies.find(c => c.id === selectedCompanyId);
@@ -63,15 +67,39 @@ export function CompanySelector({ selectedCompanyId, onCompanyChange }: CompanyS
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="w-[250px]">
-        <DropdownMenuLabel>Empresas Cliente</DropdownMenuLabel>
-        <DropdownMenuSeparator />
+        {/* APV Financeiro - Empresa BPO */}
+        {bpoCompany && (
+          <>
+            <DropdownMenuLabel>Empresa BPO</DropdownMenuLabel>
+            <DropdownMenuItem
+              onClick={() => handleCompanySelect(bpoCompany)}
+              className="flex items-center justify-between"
+            >
+              <div className="flex flex-col">
+                <span className="font-medium">{bpoCompany.name}</span>
+                <span className="text-xs text-muted-foreground">
+                  {bpoCompany.access_code} • Administração
+                </span>
+              </div>
+              {selectedCompanyId === bpoCompany.id && (
+                <Badge variant="secondary" className="ml-2">
+                  Selecionada
+                </Badge>
+              )}
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+          </>
+        )}
         
-        {clientCompanies.length === 0 ? (
+        {/* Empresas Cliente */}
+        <DropdownMenuLabel>Empresas Cliente</DropdownMenuLabel>
+        
+        {clientsOnly.length === 0 ? (
           <DropdownMenuItem disabled>
-            <span className="text-muted-foreground">Nenhuma empresa cadastrada</span>
+            <span className="text-muted-foreground">Nenhuma empresa cliente cadastrada</span>
           </DropdownMenuItem>
         ) : (
-          clientCompanies.map((company) => (
+          clientsOnly.map((company) => (
             <DropdownMenuItem
               key={company.id}
               onClick={() => handleCompanySelect(company)}
@@ -94,7 +122,7 @@ export function CompanySelector({ selectedCompanyId, onCompanyChange }: CompanyS
         
         <DropdownMenuSeparator />
         <DropdownMenuItem disabled className="text-xs text-muted-foreground">
-          Total: {clientCompanies.length} empresa(s)
+          Total: {clientsOnly.length} empresa(s) cliente + {bpoCompany ? '1 BPO' : '0 BPO'}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

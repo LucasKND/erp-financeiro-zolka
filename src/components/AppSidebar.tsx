@@ -1,4 +1,4 @@
-import { LayoutDashboard, TrendingUp, TrendingDown, Users, Building, Activity, Calendar, FileText, Settings, ScrollText, UserCheck } from "lucide-react";
+import { LayoutDashboard, TrendingUp, TrendingDown, Users, Building, Activity, Calendar, FileText, Settings, ScrollText, UserCheck, UsersRound } from "lucide-react";
 import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarTrigger, useSidebar } from "@/components/ui/sidebar";
 import { ZolkaLogo } from "@/components/ZolkaLogo";
 interface AppSidebarProps {
@@ -29,6 +29,10 @@ const menuItems = [{
   id: "crm",
   title: "CRM",
   icon: UserCheck
+}, {
+  id: "gerenciar-clientes",
+  title: "Gerenciar Clientes",
+  icon: UsersRound
 }, {
   id: "clientes",
   title: "Clientes",

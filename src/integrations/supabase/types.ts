@@ -117,6 +117,35 @@ export type Database = {
           },
         ]
       }
+      admin_client_access: {
+        Row: {
+          admin_user_id: string
+          client_company_id: string
+          created_at: string
+          id: string
+        }
+        Insert: {
+          admin_user_id: string
+          client_company_id: string
+          created_at?: string
+          id?: string
+        }
+        Update: {
+          admin_user_id?: string
+          client_company_id?: string
+          created_at?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admin_client_access_client_company_id_fkey"
+            columns: ["client_company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       calendar_events: {
         Row: {
           account_payable_id: string | null
@@ -187,26 +216,40 @@ export type Database = {
       companies: {
         Row: {
           access_code: string
+          company_type: string | null
           created_at: string
           id: string
           name: string
+          parent_bpo_id: string | null
           updated_at: string
         }
         Insert: {
           access_code: string
+          company_type?: string | null
           created_at?: string
           id?: string
           name: string
+          parent_bpo_id?: string | null
           updated_at?: string
         }
         Update: {
           access_code?: string
+          company_type?: string | null
           created_at?: string
           id?: string
           name?: string
+          parent_bpo_id?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "companies_parent_bpo_id_fkey"
+            columns: ["parent_bpo_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       crm_card_labels: {
         Row: {
@@ -493,6 +536,18 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_access_company: {
+        Args: { target_company_id: string }
+        Returns: boolean
+      }
+      create_client_company: {
+        Args: {
+          client_name: string
+          client_access_code: string
+          admin_user_id: string
+        }
+        Returns: string
+      }
       get_accounts_payable_totals: {
         Args: { company_uuid: string }
         Returns: {
@@ -543,6 +598,10 @@ export type Database = {
       initialize_crm_data: {
         Args: { company_uuid: string }
         Returns: undefined
+      }
+      is_admin_bpo: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
       }
       is_financeiro: {
         Args: Record<PropertyKey, never>

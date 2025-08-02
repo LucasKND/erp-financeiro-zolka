@@ -15,6 +15,7 @@ import { Relatorios } from "@/components/Relatorios";
 import { Configuracoes } from "@/components/Configuracoes";
 import { Auth } from "@/components/Auth";
 import CRM from "@/components/CRM";
+import GerenciarClientes from "@/components/GerenciarClientes";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 
@@ -63,6 +64,8 @@ const Index = () => {
         return <Contratos />;
       case "crm":
         return <CRM />;
+      case "gerenciar-clientes":
+        return <GerenciarClientes />;
       case "clientes":
         return <Clientes />;
       case "fornecedores":

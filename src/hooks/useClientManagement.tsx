@@ -102,7 +102,7 @@ export const useClientManagement = () => {
         description: "Apenas administradores BPO podem excluir empresas cliente.",
         variant: "destructive",
       });
-      return;
+      return false;
     }
 
     try {
@@ -120,6 +120,8 @@ export const useClientManagement = () => {
         title: "Empresa excluída!",
         description: "A empresa cliente foi removida com sucesso.",
       });
+      
+      return true;
     } catch (error: any) {
       console.error('Erro ao excluir empresa cliente:', error);
       toast({
@@ -127,6 +129,7 @@ export const useClientManagement = () => {
         description: error.message,
         variant: "destructive",
       });
+      return false;
     }
   };
 
@@ -137,7 +140,7 @@ export const useClientManagement = () => {
         description: "Apenas administradores BPO podem editar empresas cliente.",
         variant: "destructive",
       });
-      return;
+      return false;
     }
 
     try {
@@ -155,6 +158,8 @@ export const useClientManagement = () => {
         title: "Empresa atualizada!",
         description: "As informações da empresa foram atualizadas com sucesso.",
       });
+      
+      return true;
     } catch (error: any) {
       console.error('Erro ao atualizar empresa cliente:', error);
       toast({
@@ -162,6 +167,7 @@ export const useClientManagement = () => {
         description: error.message,
         variant: "destructive",
       });
+      return false;
     }
   };
 

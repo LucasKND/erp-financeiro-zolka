@@ -50,9 +50,11 @@ export function EditarEmpresaClienteDialog({
 
     setLoading(true);
     try {
-      await updateClientCompany(company.id, formData.name, formData.accessCode);
-      onEmpresaUpdated();
-      onOpenChange(false);
+      const success = await updateClientCompany(company.id, formData.name, formData.accessCode);
+      if (success) {
+        onEmpresaUpdated();
+        onOpenChange(false);
+      }
     } catch (error) {
       console.error('Erro ao atualizar empresa cliente:', error);
     } finally {

@@ -32,8 +32,10 @@ export default function GerenciarClientes() {
 
   const handleDelete = async () => {
     if (deletingCompany) {
-      await deleteClientCompany(deletingCompany.id);
-      setDeletingCompany(null);
+      const success = await deleteClientCompany(deletingCompany.id);
+      if (success) {
+        setDeletingCompany(null);
+      }
     }
   };
 

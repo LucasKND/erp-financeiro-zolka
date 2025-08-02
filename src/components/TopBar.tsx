@@ -11,6 +11,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import { usePermissions } from "@/hooks/usePermissions";
 import { useClientManagement } from "@/hooks/useClientManagement";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 import { useState } from "react";
 interface TopBarProps {
   setActiveModule: (module: string) => void;
@@ -31,6 +33,7 @@ export function TopBar({
   } = usePermissions();
 
   const { isAdminBPO } = useClientManagement();
+  const { toast } = useToast();
 
   const [isEditingName, setIsEditingName] = useState(false);
   const [editedName, setEditedName] = useState('');
@@ -67,9 +70,31 @@ export function TopBar({
     setIsEditingName(true);
   };
 
-  const handleSaveName = () => {
-    // TODO: Implement name update logic here
-    setIsEditingName(false);
+  const handleSaveName = async () => {
+    if (!editedName.trim()) return;
+    
+    try {
+      // Atualizar o nome no perfil do usuário
+      const { error } = await supabase
+        .from('profiles')
+        .update({ full_name: editedName.trim() })
+        .eq('id', user?.id);
+        
+      if (error) throw error;
+      
+      setIsEditingName(false);
+      toast({
+        title: "Nome atualizado!",
+        description: "Seu nome foi atualizado com sucesso.",
+      });
+    } catch (error: any) {
+      console.error('Erro ao atualizar nome:', error);
+      toast({
+        title: "Erro ao salvar",
+        description: "Não foi possível atualizar o nome.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleCancelEdit = () => {

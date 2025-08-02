@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, Search, Filter, UserPlus } from 'lucide-react';
+import { Plus, Search, Filter, UserPlus, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -7,6 +7,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useCRM, CRMCard } from '@/hooks/useCRM';
 import { CRMColumn } from '@/components/CRMColumn';
 import { NovoCartaoDialog } from '@/components/NovoCartaoDialog';
+import { GerenciarColunasDialog } from '@/components/GerenciarColunasDialog';
 import { DndContext, DragEndEvent, DragOverEvent, DragStartEvent } from '@dnd-kit/core';
 import { SortableContext, horizontalListSortingStrategy } from '@dnd-kit/sortable';
 
@@ -15,6 +16,7 @@ export default function CRM() {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeCard, setActiveCard] = useState<CRMCard | null>(null);
   const [novoCartaoOpen, setNovoCartaoOpen] = useState(false);
+  const [gerenciarColunasOpen, setGerenciarColunasOpen] = useState(false);
   const [selectedColumnId, setSelectedColumnId] = useState<string>('');
 
   const filteredCards = cards.filter(card =>
@@ -95,10 +97,16 @@ export default function CRM() {
             Gerencie seus clientes e projetos com o quadro Kanban
           </p>
         </div>
-        <Button onClick={() => setNovoCartaoOpen(true)}>
-          <UserPlus className="mr-2 h-4 w-4" />
-          Novo Cliente
-        </Button>
+        <div>
+          <Button onClick={() => setNovoCartaoOpen(true)}>
+            <UserPlus className="mr-2 h-4 w-4" />
+            Novo Cliente
+          </Button>
+          <Button variant="outline" onClick={() => setGerenciarColunasOpen(true)} className="ml-2">
+            <Settings className="mr-2 h-4 w-4" />
+            Gerenciar Colunas
+          </Button>
+        </div>
       </div>
 
       <div className="flex items-center space-x-2">
@@ -154,6 +162,11 @@ export default function CRM() {
         onOpenChange={setNovoCartaoOpen}
         preSelectedColumnId={selectedColumnId}
         onCardCreated={refetch}
+      />
+
+      <GerenciarColunasDialog
+        open={gerenciarColunasOpen}
+        onOpenChange={setGerenciarColunasOpen}
       />
     </div>
   );

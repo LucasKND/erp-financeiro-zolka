@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -169,6 +169,9 @@ export function NovoClienteDialog({ onClienteAdicionado, clienteParaEditar, onCl
           <DialogTitle>
             {isEditMode ? "Editar Cliente" : "Adicionar Novo Cliente"}
           </DialogTitle>
+          <DialogDescription>
+            {isEditMode ? "Atualize os dados do cliente" : "Preencha os dados para adicionar um novo cliente ao sistema"}
+          </DialogDescription>
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-6">

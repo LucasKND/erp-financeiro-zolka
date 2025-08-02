@@ -2,6 +2,7 @@ import { AlertTriangle } from "lucide-react";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogFooter,
@@ -52,6 +53,9 @@ export function ConfirmDeleteDialog({
           <DialogTitle className="mt-4 text-lg font-semibold text-gray-900 dark:text-gray-100">
             {title}
           </DialogTitle>
+          <DialogDescription className="text-sm text-muted-foreground">
+            {description}
+          </DialogDescription>
         </DialogHeader>
         
         <div className="mt-2 text-center">
@@ -59,11 +63,8 @@ export function ConfirmDeleteDialog({
             {(conta || itemName) && (
               <>
                 Tem certeza que deseja excluir <span className="font-medium text-gray-900 dark:text-gray-100">"{getDisplayName()}"</span>?
-                <br />
-                <br />
               </>
             )}
-            {description}
           </p>
         </div>
 

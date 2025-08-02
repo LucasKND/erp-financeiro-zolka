@@ -1,13 +1,15 @@
-import { Bell, User } from "lucide-react";
+import { Bell, User, Edit2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { NotificationDropdown } from "./NotificationDropdown";
 import { ThemeToggle } from "./ThemeToggle";
 import { ProfileDropdown } from "./ProfileDropdown";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import { usePermissions } from "@/hooks/usePermissions";
+import { useState } from "react";
 interface TopBarProps {
   setActiveModule: (module: string) => void;
 }
@@ -25,6 +27,9 @@ export function TopBar({
   const {
     userRole
   } = usePermissions();
+
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [editedName, setEditedName] = useState('');
 
   // Extract first name from various sources
   const getFirstName = () => {
@@ -46,9 +51,25 @@ export function TopBar({
     return "Usuário";
   };
   const getRoleLabel = () => {
+    if (userRole?.role === 'admin_bpo') return 'Admin';
     if (userRole?.role === 'financeiro') return 'Financeiro';
     if (userRole?.role === 'proprietario') return 'Proprietário';
     return 'Usuário';
+  };
+
+  const handleEditName = () => {
+    setEditedName(getFirstName());
+    setIsEditingName(true);
+  };
+
+  const handleSaveName = () => {
+    // TODO: Implement name update logic here
+    setIsEditingName(false);
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditingName(false);
+    setEditedName('');
   };
   return <header className="flex items-center justify-between px-6 py-4 bg-background border-b border-border shadow-sm">
       {/* Left Section - Company Name */}
@@ -57,7 +78,7 @@ export function TopBar({
           
           <div>
             <h1 className="text-lg font-bold text-foreground">
-              {company?.name || '2GO Marketing'}
+              {company?.name || 'APV Financeiro'}
             </h1>
           </div>
         </div>
@@ -65,9 +86,40 @@ export function TopBar({
         <div className="hidden md:block h-6 w-px bg-border"></div>
         
         <div className="hidden md:flex items-center space-x-2">
-          <span className="text-sm text-muted-foreground">
-            Olá, {getFirstName()}
-          </span>
+          {isEditingName ? (
+            <div className="flex items-center space-x-2">
+              <Input
+                value={editedName}
+                onChange={(e) => setEditedName(e.target.value)}
+                className="h-7 w-24 text-sm"
+                autoFocus
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleSaveName();
+                  if (e.key === 'Escape') handleCancelEdit();
+                }}
+              />
+              <Button size="sm" variant="ghost" className="h-7 px-2" onClick={handleSaveName}>
+                ✓
+              </Button>
+              <Button size="sm" variant="ghost" className="h-7 px-2" onClick={handleCancelEdit}>
+                ✕
+              </Button>
+            </div>
+          ) : (
+            <div className="flex items-center space-x-1">
+              <span className="text-sm text-muted-foreground">
+                Olá, {getFirstName()}
+              </span>
+              <Button 
+                size="sm" 
+                variant="ghost" 
+                className="h-5 w-5 p-0 opacity-50 hover:opacity-100"
+                onClick={handleEditName}
+              >
+                <Edit2 className="h-3 w-3" />
+              </Button>
+            </div>
+          )}
           <Badge variant="secondary" className="text-xs">
             {getRoleLabel()}
           </Badge>

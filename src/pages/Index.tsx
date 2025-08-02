@@ -14,6 +14,7 @@ import { CalendarioContas } from "@/components/CalendarioContas";
 import { Relatorios } from "@/components/Relatorios";
 import { Configuracoes } from "@/components/Configuracoes";
 import { Auth } from "@/components/Auth";
+import CRM from "@/components/CRM";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 
@@ -60,6 +61,8 @@ const Index = () => {
         return <ContasPagar />;
       case "contratos":
         return <Contratos />;
+      case "crm":
+        return <CRM />;
       case "clientes":
         return <Clientes />;
       case "fornecedores":

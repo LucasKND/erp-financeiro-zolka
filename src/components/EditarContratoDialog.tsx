@@ -51,7 +51,7 @@ export function EditarContratoDialog({ open, onOpenChange, contrato, onContratoE
     let finalValue = value;
     
     if (name === "valor") {
-      finalValue = Number(value);
+      finalValue = value; // Keep as string for form handling
     } else if (name === "dataInicio" || name === "dataFim") {
       finalValue = convertToBrazilianDate(value);
     }

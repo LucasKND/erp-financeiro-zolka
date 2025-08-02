@@ -8,6 +8,8 @@ import { useCRM, CRMCard } from '@/hooks/useCRM';
 import { CRMColumn } from '@/components/CRMColumn';
 import { NovoCartaoDialog } from '@/components/NovoCartaoDialog';
 import { GerenciarColunasDialog } from '@/components/GerenciarColunasDialog';
+import { FiltrosCRMDialog, CRMFilters } from '@/components/FiltrosCRMDialog';
+import { GerenciarEtiquetasDialog } from '@/components/GerenciarEtiquetasDialog';
 import { DndContext, DragEndEvent, DragOverEvent, DragStartEvent } from '@dnd-kit/core';
 import { SortableContext, horizontalListSortingStrategy } from '@dnd-kit/sortable';
 
@@ -17,13 +19,43 @@ export default function CRM() {
   const [activeCard, setActiveCard] = useState<CRMCard | null>(null);
   const [novoCartaoOpen, setNovoCartaoOpen] = useState(false);
   const [gerenciarColunasOpen, setGerenciarColunasOpen] = useState(false);
+  const [filtrosOpen, setFiltrosOpen] = useState(false);
+  const [etiquetasOpen, setEtiquetasOpen] = useState(false);
   const [selectedColumnId, setSelectedColumnId] = useState<string>('');
+  const [filters, setFilters] = useState<CRMFilters>({
+    search: '',
+    columns: [],
+    labels: [],
+    dateRange: { start: '', end: '' },
+    hasEmail: false,
+    hasPhone: false,
+  });
 
-  const filteredCards = cards.filter(card =>
-    card.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    card.contact_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    card.email?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredCards = cards.filter(card => {
+    // Filtro por busca textual
+    const searchMatch = !filters.search || 
+      card.title.toLowerCase().includes(filters.search.toLowerCase()) ||
+      card.contact_name?.toLowerCase().includes(filters.search.toLowerCase()) ||
+      card.email?.toLowerCase().includes(filters.search.toLowerCase()) ||
+      card.project_summary?.toLowerCase().includes(filters.search.toLowerCase());
+    
+    // Filtro por colunas
+    const columnMatch = filters.columns.length === 0 || filters.columns.includes(card.column_id);
+    
+    // Filtro por etiquetas
+    const labelMatch = filters.labels.length === 0 || 
+      card.labels?.some(label => filters.labels.includes(label.id));
+    
+    // Filtro por período
+    const dateMatch = (!filters.dateRange.start || new Date(card.created_at) >= new Date(filters.dateRange.start)) &&
+      (!filters.dateRange.end || new Date(card.created_at) <= new Date(filters.dateRange.end));
+    
+    // Filtro por informações de contato
+    const emailMatch = !filters.hasEmail || (card.email && card.email.trim() !== '');
+    const phoneMatch = !filters.hasPhone || (card.phone && card.phone.trim() !== '');
+    
+    return searchMatch && columnMatch && labelMatch && dateMatch && emailMatch && phoneMatch;
+  });
 
   const getCardsByColumn = (columnId: string) => {
     return filteredCards
@@ -106,6 +138,10 @@ export default function CRM() {
             <Settings className="mr-2 h-4 w-4" />
             Gerenciar Colunas
           </Button>
+          <Button variant="outline" onClick={() => setEtiquetasOpen(true)} className="ml-2">
+            <Settings className="mr-2 h-4 w-4" />
+            Etiquetas
+          </Button>
         </div>
       </div>
 
@@ -114,14 +150,19 @@ export default function CRM() {
           <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Buscar clientes..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            value={filters.search}
+            onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
             className="pl-8"
           />
         </div>
-        <Button variant="outline" size="sm">
+        <Button variant="outline" size="sm" onClick={() => setFiltrosOpen(true)}>
           <Filter className="mr-2 h-4 w-4" />
-          Filtros
+          Filtros Avançados
+          {(filters.columns.length > 0 || filters.labels.length > 0 || filters.dateRange.start || filters.hasEmail || filters.hasPhone) && (
+            <Badge variant="secondary" className="ml-2">
+              {[...filters.columns, ...filters.labels, filters.dateRange.start && '📅', filters.hasEmail && '📧', filters.hasPhone && '📞'].filter(Boolean).length}
+            </Badge>
+          )}
         </Button>
       </div>
 
@@ -167,6 +208,19 @@ export default function CRM() {
       <GerenciarColunasDialog
         open={gerenciarColunasOpen}
         onOpenChange={setGerenciarColunasOpen}
+      />
+
+      <FiltrosCRMDialog
+        open={filtrosOpen}
+        onOpenChange={setFiltrosOpen}
+        filters={filters}
+        onFiltersChange={setFilters}
+      />
+
+      <GerenciarEtiquetasDialog
+        open={etiquetasOpen}
+        onOpenChange={setEtiquetasOpen}
+        onUpdate={refetch}
       />
     </div>
   );

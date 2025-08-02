@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { MoreHorizontal, Mail, Phone, Edit, Trash2, CheckSquare } from 'lucide-react';
+import { MoreHorizontal, Mail, Phone, Edit, Trash2, CheckSquare, Tag } from 'lucide-react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -9,12 +9,12 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { CRMCard } from '@/hooks/useCRM';
+import { CRMCard, useCRM } from '@/hooks/useCRM';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { EditarCartaoDialog } from '@/components/EditarCartaoDialog';
 import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
-import { useCRM } from '@/hooks/useCRM';
+import { GerenciarEtiquetasDialog } from '@/components/GerenciarEtiquetasDialog';
 
 interface CRMCardProps {
   card: CRMCard;
@@ -24,6 +24,7 @@ interface CRMCardProps {
 export function CRMCardComponent({ card, onRefetch }: CRMCardProps) {
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [etiquetasOpen, setEtiquetasOpen] = useState(false);
   const { deleteCard } = useCRM();
 
   const {
@@ -71,6 +72,10 @@ export function CRMCardComponent({ card, onRefetch }: CRMCardProps) {
                 <DropdownMenuItem onClick={() => setEditOpen(true)}>
                   <Edit className="mr-2 h-4 w-4" />
                   Editar
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setEtiquetasOpen(true)}>
+                  <Tag className="mr-2 h-4 w-4" />
+                  Gerenciar Etiquetas
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setDeleteOpen(true)} className="text-destructive">
                   <Trash2 className="mr-2 h-4 w-4" />
@@ -140,6 +145,13 @@ export function CRMCardComponent({ card, onRefetch }: CRMCardProps) {
         onOpenChange={setEditOpen}
         card={card}
         onCardUpdated={onRefetch}
+      />
+
+      <GerenciarEtiquetasDialog
+        open={etiquetasOpen}
+        onOpenChange={setEtiquetasOpen}
+        card={card}
+        onUpdate={onRefetch}
       />
 
       <ConfirmDeleteDialog

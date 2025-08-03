@@ -10,8 +10,10 @@ import { NovoCartaoDialog } from '@/components/NovoCartaoDialog';
 import { GerenciarColunasDialog } from '@/components/GerenciarColunasDialog';
 import { FiltrosCRMDialog, CRMFilters } from '@/components/FiltrosCRMDialog';
 import { GerenciarEtiquetasDialog } from '@/components/GerenciarEtiquetasDialog';
-import { DndContext, DragEndEvent, DragOverEvent, DragStartEvent } from '@dnd-kit/core';
+import { DndContext, DragEndEvent, DragOverEvent, DragStartEvent, DragOverlay, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { SortableContext, horizontalListSortingStrategy } from '@dnd-kit/sortable';
+import { createPortal } from 'react-dom';
+import { CRMCardComponent } from '@/components/CRMCard';
 
 export default function CRM() {
   const { columns, cards, labels, loading, moveCard, refetch } = useCRM();
@@ -30,6 +32,15 @@ export default function CRM() {
     hasEmail: false,
     hasPhone: false,
   });
+
+  // Configurar sensores para melhor responsividade
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8, // Só ativa o drag após mover 8px
+      },
+    })
+  );
 
   const filteredCards = cards.filter(card => {
     // Filtro por busca textual
@@ -179,6 +190,7 @@ export default function CRM() {
       </div>
 
       <DndContext
+        sensors={sensors}
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
         onDragOver={handleDragOver}
@@ -196,6 +208,23 @@ export default function CRM() {
             ))}
           </SortableContext>
         </div>
+        
+        {/* DragOverlay para mostrar o card sendo arrastado */}
+        <DragOverlay
+          adjustScale={false}
+          style={{
+            transformOrigin: '0 0',
+          }}
+        >
+          {activeCard ? (
+            <div className="rotate-3 opacity-95">
+              <CRMCardComponent 
+                card={activeCard} 
+                onRefetch={refetch}
+              />
+            </div>
+          ) : null}
+        </DragOverlay>
       </DndContext>
 
       <NovoCartaoDialog

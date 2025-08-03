@@ -36,18 +36,47 @@ export function CRMCardComponent({ card, onRefetch }: CRMCardProps) {
     isDragging,
   } = useSortable({
     id: card.id,
+    transition: {
+      duration: 200,
+      easing: 'cubic-bezier(0.25, 1, 0.5, 1)',
+    },
   });
 
   const style = {
     transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.5 : 1,
+    transition: isDragging ? 'none' : transition,
+    opacity: isDragging ? 0.8 : 1,
+    zIndex: isDragging ? 1000 : 'auto',
+    boxShadow: isDragging ? '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)' : undefined,
+    scale: isDragging ? '1.02' : '1',
   };
 
   const handleDelete = async () => {
-    await deleteCard(card.id);
-    onRefetch();
-    setDeleteOpen(false);
+    try {
+      await deleteCard(card.id);
+      onRefetch();
+      setDeleteOpen(false);
+    } catch (error) {
+      console.error('Erro ao excluir cartão:', error);
+    }
+  };
+
+  const handleEditClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setEditOpen(true);
+  };
+
+  const handleEtiquetasClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setEtiquetasOpen(true);
+  };
+
+  const handleDeleteClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDeleteOpen(true);
   };
 
   return (
@@ -55,29 +84,58 @@ export function CRMCardComponent({ card, onRefetch }: CRMCardProps) {
       <Card
         ref={setNodeRef}
         style={style}
-        {...attributes}
-        {...listeners}
-        className="cursor-grab active:cursor-grabbing hover:shadow-md transition-shadow"
+        className={`hover:shadow-md transition-all duration-200 ${
+          isDragging 
+            ? 'cursor-grabbing shadow-2xl border-2 border-blue-300 bg-white' 
+            : 'hover:scale-[1.01] cursor-grab'
+        }`}
       >
         <CardHeader className="pb-2">
           <div className="flex items-start justify-between">
-            <h3 className="font-medium text-sm leading-tight">{card.title}</h3>
+            <div 
+              {...attributes}
+              {...listeners}
+              className={`flex-1 ${
+                isDragging 
+                  ? 'cursor-grabbing' 
+                  : 'cursor-grab active:cursor-grabbing hover:bg-gray-50 rounded p-1 -m-1 transition-colors'
+              }`}
+            >
+              <h3 className="font-medium text-sm leading-tight">{card.title}</h3>
+            </div>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="h-6 w-6 p-0 cursor-pointer"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                  }}
+                >
                   <MoreHorizontal className="h-3 w-3" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => setEditOpen(true)}>
+              <DropdownMenuContent align="end" className="z-50">
+                <DropdownMenuItem 
+                  onClick={handleEditClick}
+                  className="cursor-pointer"
+                >
                   <Edit className="mr-2 h-4 w-4" />
                   Editar
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setEtiquetasOpen(true)}>
+                <DropdownMenuItem 
+                  onClick={handleEtiquetasClick}
+                  className="cursor-pointer"
+                >
                   <Tag className="mr-2 h-4 w-4" />
                   Gerenciar Etiquetas
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setDeleteOpen(true)} className="text-destructive">
+                <DropdownMenuItem 
+                  onClick={handleDeleteClick} 
+                  className="text-destructive cursor-pointer"
+                >
                   <Trash2 className="mr-2 h-4 w-4" />
                   Excluir
                 </DropdownMenuItem>

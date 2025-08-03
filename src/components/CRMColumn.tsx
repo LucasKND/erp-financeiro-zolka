@@ -42,14 +42,18 @@ export function CRMColumn({ column, cards, onAddCard, onRefetch }: CRMColumnProp
           </Button>
         </CardHeader>
         <CardContent className="pt-0" ref={setNodeRef}>
-          <div className="space-y-3 min-h-[400px]">
+          <div className="space-y-3 min-h-[400px] transition-all duration-200">
             <SortableContext items={cards.map(card => card.id)} strategy={verticalListSortingStrategy}>
               {cards.map((card) => (
-                <CRMCardComponent
+                <div 
                   key={card.id}
-                  card={card}
-                  onRefetch={onRefetch}
-                />
+                  className="transition-all duration-200 ease-in-out"
+                >
+                  <CRMCardComponent
+                    card={card}
+                    onRefetch={onRefetch}
+                  />
+                </div>
               ))}
             </SortableContext>
           </div>

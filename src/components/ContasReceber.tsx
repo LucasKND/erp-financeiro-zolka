@@ -20,6 +20,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useNotifications } from "@/hooks/useNotifications";
 import { supabase } from "@/integrations/supabase/client";
 import { useProfile } from "@/hooks/useProfile";
+import { useActiveCompany } from "@/hooks/useActiveCompany";
 import type { Tables } from "@/integrations/supabase/types";
 import { SecureContaReceberDialog } from "./SecureContaReceberDialog";
 
@@ -38,16 +39,17 @@ export function ContasReceber() {
   const { toast } = useToast();
   const { invalidateAccount } = useNotifications();
   const { profile, company } = useProfile();
+  const { activeCompanyId, activeCompany } = useActiveCompany();
 
   const fetchContas = async () => {
-    if (!profile?.company_id) return;
+    if (!activeCompanyId) return;
 
     try {
       setLoading(true);
       const { data, error } = await supabase
         .from('accounts_receivable')
         .select('*')
-        .eq('company_id', profile.company_id)
+        .eq('company_id', activeCompanyId)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -65,10 +67,10 @@ export function ContasReceber() {
   };
 
   useEffect(() => {
-    if (profile?.company_id) {
+    if (activeCompanyId) {
       fetchContas();
     }
-  }, [profile?.company_id]);
+  }, [activeCompanyId]);
 
   const handleMarcarComoRecebido = async (contaId: string) => {
     try {
@@ -213,7 +215,7 @@ export function ContasReceber() {
         <div>
           <h1 className="text-3xl font-bold text-foreground">Contas a Receber</h1>
           <p className="text-muted-foreground mt-1">
-            Gerencie suas contas a receber - {company?.name}
+            Gerencie suas contas a receber - {activeCompany?.name}
           </p>
         </div>
         <SecureContaReceberDialog onContaAdicionada={fetchContas} />

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { useActiveCompany } from '@/hooks/useActiveCompany';
 import { useToast } from '@/hooks/use-toast';
 
 export interface CRMColumn {
@@ -62,13 +63,17 @@ export const useCRM = () => {
   const [labels, setLabels] = useState<CRMLabel[]>([]);
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
+  const { activeCompanyId } = useActiveCompany();
   const { toast } = useToast();
 
   const fetchColumns = async () => {
+    if (!activeCompanyId) return;
+    
     try {
       const { data, error } = await supabase
         .from('crm_columns')
         .select('*')
+        .eq('company_id', activeCompanyId)
         .order('position');
 
       if (error) throw error;
@@ -84,6 +89,8 @@ export const useCRM = () => {
   };
 
   const fetchCards = async () => {
+    if (!activeCompanyId) return;
+    
     try {
       const { data, error } = await supabase
         .from('crm_cards')
@@ -93,6 +100,7 @@ export const useCRM = () => {
             label:crm_labels(*)
           )
         `)
+        .eq('company_id', activeCompanyId)
         .order('position');
 
       if (error) throw error;
@@ -115,10 +123,13 @@ export const useCRM = () => {
   };
 
   const fetchLabels = async () => {
+    if (!activeCompanyId) return;
+    
     try {
       const { data, error } = await supabase
         .from('crm_labels')
         .select('*')
+        .eq('company_id', activeCompanyId)
         .order('name');
 
       if (error) throw error;
@@ -129,28 +140,23 @@ export const useCRM = () => {
   };
 
   const initializeCRMData = async () => {
+    if (!activeCompanyId) return;
+    
     try {
-      // First check if columns exist
+      // First check if columns exist for this company
       const { data: existingColumns } = await supabase
         .from('crm_columns')
         .select('*')
+        .eq('company_id', activeCompanyId)
         .limit(1);
 
       if (!existingColumns || existingColumns.length === 0) {
         // Initialize CRM data for the company
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('company_id')
-          .eq('id', user?.id)
-          .single();
+        const { error } = await supabase.rpc('initialize_crm_data', {
+          company_uuid: activeCompanyId
+        });
 
-        if (profile?.company_id) {
-          const { error } = await supabase.rpc('initialize_crm_data', {
-            company_uuid: profile.company_id
-          });
-
-          if (error) throw error;
-        }
+        if (error) throw error;
       }
     } catch (error: any) {
       console.error('Erro ao inicializar dados do CRM:', error);
@@ -158,19 +164,9 @@ export const useCRM = () => {
   };
 
   const createCard = async (cardData: Partial<CRMCard>) => {
-    if (!user) return;
+    if (!user || !activeCompanyId) return;
 
     try {
-      // Get user's company_id
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('company_id')
-        .eq('id', user.id)
-        .single();
-
-      if (!profile?.company_id) {
-        throw new Error('Company not found');
-      }
 
       // Filter out properties that shouldn't be in the insert and ensure required fields
       const { id, labels, created_at, updated_at, ...cleanData } = cardData;
@@ -178,7 +174,7 @@ export const useCRM = () => {
       const insertData = {
         title: cleanData.title || '',
         column_id: cleanData.column_id || '',
-        company_id: profile.company_id,
+        company_id: activeCompanyId,
         created_by: user.id,
         position: 0,
         ...(cleanData.description && { description: cleanData.description }),
@@ -317,7 +313,7 @@ export const useCRM = () => {
   };
 
   useEffect(() => {
-    if (user) {
+    if (user && activeCompanyId) {
       const loadData = async () => {
         setLoading(true);
         await initializeCRMData();
@@ -327,7 +323,7 @@ export const useCRM = () => {
       
       loadData();
     }
-  }, [user]);
+  }, [user, activeCompanyId]);
 
   return {
     columns,
